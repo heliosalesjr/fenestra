@@ -1,0 +1,11 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1773348875
+FENESTRA_GDD.md::TextFile::-1::1773348268::0::1::::<><><>0<>0<><>::
+::res://assets/::1773348510
+::res://assets/audio/::1773348510
+::res://assets/sprites/::1773348510
+::res://scenes/::1773348557
+Circle.tscn::PackedScene::-1::1773348557::0::1::::<><><>0<>0<><>::res://scripts/Circle.gd<>res://scripts/ArcVisual.gd
+::res://scripts/::1773348550
+ArcVisual.gd::GDScript::2605841723247389024::1773348534::0::1::::<>Node2D<><>0<>1<><>::
+Circle.gd::GDScript::4164137341464035801::1773348550::0::1::::<>Node2D<><>0<>1<><>::
