@@ -6,6 +6,9 @@ extends Node2D
 
 signal landing_failed(reason: String)
 
+## Razão do último pouso inválido — lida pelo Player após is_landing_valid() retornar false.
+var last_fail_reason: String = ""
+
 @export var rotation_speed: float = 90.0:   # graus por segundo
 	set(value):
 		rotation_speed = value
@@ -53,6 +56,7 @@ func _process(delta: float) -> void:
 ## deste círculo) é válido. Emite landing_failed com a razão em caso negativo.
 func is_landing_valid(world_angle_deg: float) -> bool:
 	if not is_active:
+		last_fail_reason = "inactive"
 		landing_failed.emit("inactive")
 		return false
 
@@ -60,9 +64,11 @@ func is_landing_valid(world_angle_deg: float) -> bool:
 
 	for arc in blocked_arcs:
 		if _angle_in_arc(local_angle, arc.x, arc.y):
+			last_fail_reason = "blocked"
 			landing_failed.emit("blocked")
 			return false
 
+	last_fail_reason = ""
 	return true
 
 
