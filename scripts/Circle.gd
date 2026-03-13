@@ -31,6 +31,18 @@ var last_fail_reason: String = ""
 		is_active = value
 		_sync_active_state()
 
+@export var pulse_enabled: bool = false:
+	set(value):
+		pulse_enabled = value
+		_pulse_timer = 0.0
+		if not pulse_enabled:
+			is_active = true
+
+@export var pulse_active_duration: float   = 1.3
+@export var pulse_inactive_duration: float = 0.8
+
+var _pulse_timer: float = 0.0
+
 @onready var rotation_root: Node2D      = $RotationRoot
 @onready var arc_visual: Node2D         = $RotationRoot/ArcVisual
 @onready var collision_shape: CollisionShape2D = $Area2D/CollisionShape2D
@@ -47,10 +59,24 @@ func _process(delta: float) -> void:
 		return
 	rotation_root.rotation_degrees += rotation_speed * delta
 
+	if pulse_enabled:
+		_pulse_timer += delta
+		var duration := pulse_active_duration if is_active else pulse_inactive_duration
+		if _pulse_timer >= duration:
+			_pulse_timer = 0.0
+			is_active = !is_active
+
 
 # ---------------------------------------------------------------------------
 # API pública
 # ---------------------------------------------------------------------------
+
+## Faz todos os orbiters filhos sumirem (chamado pelo Game ao pousar neste círculo).
+func clear_orbiters() -> void:
+	for child in get_children():
+		if child.has_method("fade_and_free"):
+			child.fade_and_free()
+
 
 ## Verifica se o pouso no ângulo world_angle_deg (em graus, relativo ao centro
 ## deste círculo) é válido. Emite landing_failed com a razão em caso negativo.
