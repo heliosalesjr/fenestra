@@ -5,72 +5,94 @@
 
 ## Visão geral
 
-**Nome:** Fenestra  
-**Engine:** Godot 4.5+  
-**Plataforma:** Mobile (Android e iOS)  
-**Gênero:** Arcade / Precision timing  
-**Inspiração:** Dizzypad (iPad)  
-**Conceito em uma frase:** Pule entre círculos giratórios acertando o momento e o ponto de entrada certos ao mesmo tempo.
+**Nome:** Fenestra
+**Engine:** Godot 4.5+
+**Plataforma:** Mobile (Android e iOS)
+**Gênero:** Arcade / Precision timing
+**Inspiração:** Orbia (iPad/mobile)
+**Conceito em uma frase:** Mova-se entre círculos giratórios acertando o momento certo para passar pelos arcos livres e desviar dos obstáculos.
 
 ---
 
 ## Mecânica central
 
-O jogo é baseado em Dizzypad: o jogador salta de círculo em círculo. Os círculos giram continuamente. A diferença são duas camadas adicionais de desafio:
+O jogador ocupa o **centro** de um círculo e, ao tocar/clicar, move-se instantaneamente para o **centro do próximo círculo** da sequência (estilo Orbia). Os círculos giram continuamente. O desafio está em tocar no momento em que o ângulo de chegada coincide com um segmento livre e o círculo está ativo.
+
+> **Ângulo de chegada:** direção fixa da linha que conecta os dois círculos. O jogador não controla o ângulo — só o timing.
 
 ### 1. Arcos bloqueados
-A borda de cada círculo tem segmentos **livres** e segmentos **bloqueados**.  
-- O jogador só pode pousar num segmento **livre**.  
-- Pousar num segmento bloqueado = morte.  
-- Os segmentos são visualmente distintos (cor da borda: verde = livre, cinza escuro = bloqueado).  
-- Em fases avançadas, os arcos se reposicionam a cada volta completa do círculo.
+A borda de cada círculo tem segmentos **livres** e segmentos **bloqueados**.
+- O jogador só pode atravessar um segmento **livre**.
+- Atravessar um segmento bloqueado = morte.
+- Os segmentos são visualmente distintos (cor da borda: verde = livre, cinza escuro = bloqueado).
+- Os arcos giram junto com o `RotationRoot` do círculo.
 
 ### 2. Ativação pulsante
-Cada círculo alterna entre estado **ativo** e **inativo** em ciclos.  
-- O jogador só pode pousar num círculo **ativo**.  
-- Pousar num círculo inativo = morte.  
-- O estado é comunicado pela opacidade/brilho do círculo inteiro (cheio = ativo, translúcido = inativo).  
+Cada círculo alterna entre estado **ativo** e **inativo** em ciclos.
+- O jogador só pode pousar num círculo **ativo**.
+- Pousar num círculo inativo = morte.
+- O estado é comunicado pela opacidade do círculo inteiro (100% = ativo, ~30% = inativo).
 - Um indicador de progresso ao redor da borda mostra quanto tempo falta para o próximo estado mudar.
 
+### 3. Orbiters
+Pequenas esferas que orbitam ao redor de certos círculos em padrões variados.
+- Se o jogador chegar a um círculo que possui orbiters, eles fazem **fade out** e somem.
+- Os orbiters são puramente visuais/atmosféricos na versão atual — não causam morte por contato.
+- Tamanhos, velocidades e ângulos de início variáveis por orbiter.
+- Podem orbitar em sentidos e raios diferentes no mesmo círculo.
+
 ### Combinação
-Nas fases avançadas, as duas condições se aplicam simultaneamente:  
-o jogador precisa encontrar o momento em que o arco certo está alinhado **e** o círculo está ativo.  
+Nas fases avançadas, as três condições se aplicam simultaneamente.
 A janela combinada nunca deve ser menor que ~400ms (regra de design inegociável).
 
 ### Feedback de morte diferenciado
-- Morrer em arco bloqueado → efeito visual/sonoro A (impacto na borda, cor vermelha)  
-- Morrer em círculo inativo → efeito visual/sonoro B (círculo some, fade rápido)  
+- Morrer em arco bloqueado → player fica vermelho, som de impacto seco
+- Morrer em círculo inativo → player fica vermelho, fade rápido
 O jogador precisa entender instantaneamente qual condição falhou.
 
 ---
 
 ## Controles
 
-- **Toque simples** → salta do círculo atual para o próximo  
-- O salto é sempre em direção ao próximo círculo da sequência (sem controle direcional livre)  
-- O timing e o ponto de entrada dependem de quando o jogador toca  
+- **Toque simples** → move o player do centro do círculo atual para o centro do próximo
+- O movimento é sempre para o próximo círculo da sequência (sem controle direcional)
+- O timing define se o ângulo de chegada cai em arco livre ou bloqueado
 - Sem botões, sem joystick — toque único é toda a interface durante o jogo
 
 ---
 
-## Estrutura de progressão de fases
+## Estrutura de níveis
 
-Cada fase introduz **exatamente uma variável nova**. Nunca subir dois eixos de dificuldade ao mesmo tempo.
+Cada nível tem **3 a 5 pulos** (círculos intermediários) entre o início e o checkpoint.
 
-| Fase | Arcos bloqueados | Pulso | Velocidade | Novidade |
-|------|-----------------|-------|------------|----------|
-| 1 | Nenhum | Sem pulso | Baixa | Tutorial: só timing de salto |
-| 2 | Pequeno (≈60° bloqueado) | Sem pulso | Baixa | Introduz leitura espacial |
-| 3 | Crescente (60°→120°→180°) | Sem pulso | Média | Janela livre vai reduzindo |
-| 4 | Nenhum | Pulso regular lento | Baixa | Introduz timing duplo isolado |
-| 5 | Pequeno (≈60°) | Pulso regular lento | Média | Primeira combinação, generosa |
-| 6 | Dois arcos não-contíguos | Pulso médio | Média | Escolha de qual janela esperar |
-| 7 | Arcos dinâmicos | Pulso irregular | Alta | Leitura em tempo real, sem memorização |
+```
+[Círculo de partida]  →  [Círculo 1]  →  ...  →  [Círculo N]  →  [Checkpoint]
+     sem perigo          perigos variados                           sem perigo
+```
+
+- **Círculo de partida:** sem arcos bloqueados, sem pulso, sem orbiters. Ponto de saída puro.
+- **Círculos intermediários:** combinação de arcos, pulso e orbiters conforme o nível.
+- **Checkpoint:** sem perigo. Ponto de save. Ao chegar aqui, o próximo nível começa.
+- Ao morrer: reinicia do círculo de partida do nível atual (sem vidas, estilo arcade).
+
+### Progressão de dificuldade por nível
+
+Cada nível introduz **exatamente uma variável nova**. Nunca subir dois eixos de dificuldade ao mesmo tempo.
+
+| Nível | Arcos bloqueados | Pulso | Orbiters | Velocidade | Novidade |
+|-------|-----------------|-------|----------|------------|----------|
+| 1 | Pequeno (≈120° bloqueado) | Não | Não | Baixa | Arcos — leitura de timing básico |
+| 2 | Médio (≈180°) | Não | Não | Baixa | Janela mais apertada |
+| 3 | Nenhum | Sim, lento | Não | Baixa | Pulso isolado |
+| 4 | Pequeno | Sim, lento | Não | Média | Primeira combinação, generosa |
+| 5 | Nenhum | Não | Sim | Baixa | Orbiters como distração visual |
+| 6 | Médio | Sim, médio | Sim | Média | Combinação completa |
+| 7 | Dinâmicos | Irregular | Múltiplos | Alta | Leitura em tempo real |
 
 ### Regras de balanceamento
-- Quando o arco livre é pequeno → o pulso deve ter janela longa  
-- Quando o pulso é rápido → o arco deve ser grande (janela espacial confortável)  
-- Os dois nunca apertam juntos antes da fase 6+  
+- Quando o arco livre é pequeno → o pulso deve ter janela longa
+- Quando o pulso é rápido → o arco deve ser grande
+- Os dois nunca apertam juntos antes do nível 6+
 - Velocidade de rotação: eixo separado, sobe devagar e independentemente
 
 ---
@@ -81,20 +103,22 @@ Cada fase introduz **exatamente uma variável nova**. Nunca subir dois eixos de 
 fenestra/
 ├── project.godot
 ├── scenes/
-│   ├── Game.tscn              # cena principal
+│   ├── Game.tscn              # cena principal / nível 1 de demonstração
 │   ├── Circle.tscn            # círculo giratório (cena reutilizável)
 │   ├── Player.tscn            # personagem/bolinha
-│   ├── UI.tscn                # HUD (score, indicador de pulso)
-│   └── MainMenu.tscn
+│   ├── Orbiter.tscn           # esfera orbitante (cena reutilizável)
+│   ├── UI.tscn                # HUD (score, indicador de pulso) — pendente
+│   └── MainMenu.tscn          # pendente
 ├── scripts/
-│   ├── Game.gd                # lógica principal, geração de fases
-│   ├── Circle.gd              # rotação, arcos, pulso, colisão de borda
-│   ├── Player.gd              # salto, detecção de pouso, morte
-│   └── PhaseConfig.gd         # dados de configuração por fase
+│   ├── Game.gd                # lógica principal, input, linhas de conexão
+│   ├── Circle.gd              # rotação, arcos, pulso, clear_orbiters
+│   ├── Player.gd              # movimento centro-a-centro, detecção de pouso, morte
+│   ├── Orbiter.gd             # órbita, fade_and_free
+│   └── PhaseConfig.gd         # dados de configuração por fase — pendente
 ├── assets/
 │   ├── audio/
 │   └── sprites/
-└── FENESTRA_GDD.md            # este arquivo
+└── FENESTRA_GDD.md
 ```
 
 ---
@@ -102,66 +126,107 @@ fenestra/
 ## Nós e cenas principais
 
 ### Circle.tscn
-- **Node2D** (raiz)
-  - **Node2D** `RotationRoot` — filho que gira continuamente
-    - **Arc visual** — desenhado via `_draw()` ou shader
-  - **AnimationPlayer** — controla o pulso (ativo/inativo)
+- **Node2D** (raiz) — `Circle.gd`
+  - **Node2D** `RotationRoot` — gira continuamente
+    - **Node2D** `ArcVisual` — `ArcVisual.gd`, desenha os arcos via `_draw()`
+  - **AnimationPlayer** — disponível para animações futuras
   - **Area2D** + **CollisionShape2D** — detecção de pouso
 
-**Circle.gd — responsabilidades:**
-- Girar `RotationRoot` a cada frame (`rotation_degrees += speed * delta`)
-- Definir quais segmentos são livres/bloqueados (array de ângulos)
-- Alternar estado ativo/inativo conforme config da fase
-- Expor método `is_landing_valid(angle: float) -> bool`
-- Emitir sinal `landing_failed(reason: String)` com `"blocked"` ou `"inactive"`
-
-### Player.gd — responsabilidades:
-- Ficar "preso" ao círculo atual, rotacionando junto
-- Ao toque: calcular ângulo atual no círculo de destino e saltar
-- Ao pousar: chamar `circle.is_landing_valid(angle)` e reagir
-- Emitir sinal `player_died(reason: String)`
-
-### PhaseConfig.gd
-Recurso (`Resource`) com os parâmetros de cada fase:
+**Circle.gd — exports:**
 ```gdscript
-@export var rotation_speed: float        # graus por segundo
-@export var blocked_arcs: Array[Vector2] # pares [inicio_grau, fim_grau]
+@export var rotation_speed: float          # graus por segundo
+@export var circle_radius: float           # raio em pixels
+@export var blocked_arcs: Array[Vector2]   # pares [inicio_grau, fim_grau] no espaço local
+@export var is_active: bool
 @export var pulse_enabled: bool
-@export var pulse_active_duration: float # segundos ativo
+@export var pulse_active_duration: float
 @export var pulse_inactive_duration: float
-@export var pulse_irregular: bool        # se true, duração varia aleatoriamente dentro de um range
 ```
+
+**Circle.gd — API pública:**
+- `is_landing_valid(world_angle_deg: float) -> bool` — verifica arcos e pulso, emite `landing_failed`
+- `clear_orbiters()` — chama `fade_and_free()` em todos os filhos orbiters
+- `last_fail_reason: String` — `"blocked"` ou `"inactive"`, lido pelo Player após retorno false
+
+### Player.gd — responsabilidades
+- Ao iniciar: posiciona-se no centro do círculo de partida
+- Ao toque: move-se para o centro do próximo círculo via tween (0.14s, ease in-out quad)
+- Ao chegar: calcula o ângulo de aproximação e chama `circle.is_landing_valid()`
+- Em caso de morte: fica vermelho, emite `player_died(reason)`
+- Estados: `ON_CIRCLE` | `MOVING` | `DEAD`
+- Sinais: `landed_on(circle)`, `player_died(reason)`
+
+### Orbiter.gd — responsabilidades
+- Orbita ao redor do centro do nó pai (que é um Circle)
+- `_process`: atualiza `position = Vector2.RIGHT.rotated(angle) * orbit_radius`
+- `_draw`: desenha a esfera
+- `fade_and_free()`: tween de opacidade 1→0 e depois `queue_free()`
+
+**Orbiter.gd — exports:**
+```gdscript
+@export var orbit_radius: float
+@export var orbit_speed: float   # graus/s, positivo = horário
+@export var sphere_radius: float
+@export var sphere_color: Color
+@export var start_angle: float   # graus
+```
+
+### Game.gd — responsabilidades
+- Mantém `circle_sequence: Array[NodePath]` (configurado no editor)
+- `_draw()`: desenha linhas de conexão entre círculos consecutivos
+- Input: toque/clique → `player.move_to(next_circle)`
+- `_on_player_landed`: atualiza índice, chama `circle.clear_orbiters()`
+- `_on_player_died`: aguarda 1s e chama `player.respawn(circles[0])`
 
 ---
 
 ## Visual e feedback
 
-### Comunicação de estado (dois canais visuais separados)
+### Comunicação de estado
+
 | Estado | Canal visual | Descrição |
 |--------|-------------|-----------|
 | Arco livre | Cor da borda | Verde vibrante |
-| Arco bloqueado | Cor da borda | Cinza escuro / quase invisível |
-| Círculo ativo | Opacidade do círculo | 100% opaco |
-| Círculo inativo | Opacidade do círculo | ~30% translúcido |
+| Arco bloqueado | Cor da borda | Cinza escuro |
+| Círculo ativo | Opacidade | 100% |
+| Círculo inativo | Opacidade | ~30% translúcido |
+| Player morto | Cor da bola | Vermelho |
+
+### Linhas de conexão
+Linhas cinzas semi-transparentes conectam os círculos na ordem da sequência.
+Desenhadas via `_draw()` no nó raiz do Game.
 
 ### Indicador de pulso
-Anel de progresso fino ao redor do círculo (estilo timer circular).  
-Completa uma volta e muda de cor quando o estado vai mudar.  
-Jogador pode prever o próximo estado sem depender de memorização.
+Anel de progresso fino ao redor do círculo (estilo timer circular) — **pendente de implementação**.
+Completará uma volta e mudará de cor quando o estado vai mudar.
 
 ### Morte
-- Arco bloqueado: flash vermelho na borda, partículas saindo do ponto de impacto, som de impacto seco
-- Círculo inativo: círculo desaparece brevemente, jogador cai, som de "vácuo" ou fade
+- Bola fica vermelha por 1s antes do respawn
+- Feedback visual/sonoro diferenciado por tipo de morte — **pendente**
 
 ---
 
 ## Pontuação
 
-- +1 ponto por pouso bem-sucedido  
-- Multiplicador de combo por pousos consecutivos sem errar  
-- Score exibido no topo durante o jogo  
-- High score salvo localmente (`FileAccess` do Godot)  
-- Sem vidas — cada erro reinicia a fase (estilo arcade)
+- +1 ponto por pouso bem-sucedido
+- Multiplicador de combo por pousos consecutivos
+- Score exibido no topo durante o jogo
+- High score salvo localmente (`FileAccess`)
+- Sem vidas — cada erro reinicia o nível atual
+
+---
+
+## Nível 1 — demonstração (implementado)
+
+Introduz as três mecânicas em sequência, uma por círculo:
+
+| Círculo | Posição | Perigo | Detalhe |
+|---------|---------|--------|---------|
+| Circle0 | (195, 720) | Nenhum | Partida |
+| Circle1 | (100, 555) | Arcos | 2 arcos bloqueados, 70°/s |
+| Circle2 | (290, 395) | Pulso | 1.3s ativo / 0.8s inativo, −55°/s |
+| Circle3 | (105, 235) | Orbiters + arco | 3 orbiters em triângulo (120° apart), 80°/s |
+| Circle4 | (200,  80) | Nenhum | Checkpoint |
 
 ---
 
@@ -170,32 +235,34 @@ Jogador pode prever o próximo estado sem depender de memorização.
 - **Orientação:** Portrait (vertical), fixo
 - **Resolução base:** 390×844 (iPhone 14 como referência)
 - **Stretch mode:** `canvas_items` com aspect `expand`
-- **Input:** apenas `InputEventScreenTouch` (ignorar mouse em produção)
-- **Física:** não usar `PhysicsServer` — movimento é matemático/manual para precisão
-- **Rendering:** compatível com GLES3 (Godot 4 mobile default)
+- **Input:** `InputEventScreenTouch` (produção) + `InputEventMouseButton` (teste desktop)
+- **Física:** sem `PhysicsServer` — todo movimento é matemático
+- **Rendering:** mobile / gl_compatibility
+- **Background:** `Color(0.07, 0.07, 0.11)` — azul escuro quase preto
 
 ---
 
 ## O que NÃO implementar ainda
 
-Para manter o escopo controlado na primeira versão:
 - ❌ Temas visuais / skins
-- ❌ Sistema de fases infinitas geradas proceduralmente
+- ❌ Sistema de níveis infinitos gerados proceduralmente
 - ❌ Multiplayer ou ranking online
 - ❌ Monetização
 - ❌ Efeitos de partícula elaborados
-
-Foco total em: mecânica funcionando, progressão das 7 fases, feedback claro, sensação de jogo justa.
+- ❌ Orbiters causando morte por contato (por enquanto são visuais)
 
 ---
 
-## Próximos passos sugeridos
+## Próximos passos
 
-1. Criar `Circle.tscn` com rotação básica e desenho de arcos via `_draw()`
-2. Implementar `is_landing_valid()` com detecção de ângulo
-3. Criar `Player.tscn` com lógica de salto e pouso
-4. Ligar os dois com a cena `Game.tscn`
-5. Adicionar pulso via `AnimationPlayer` no `Circle`
-6. Implementar `PhaseConfig` como `Resource` e carregar fases em sequência
-7. Adicionar feedback visual e sonoro de morte
-8. Testar em dispositivo real (não só no emulador) desde cedo
+1. ✅ `Circle.tscn` com rotação e arcos via `_draw()`
+2. ✅ `is_landing_valid()` com detecção de ângulo
+3. ✅ `Player.tscn` — movimento centro-a-centro estilo Orbia
+4. ✅ `Game.tscn` — nível 1 com as três mecânicas
+5. ✅ Pulso implementado em `Circle.gd`
+6. ✅ `Orbiter.tscn` com fade ao pousar
+7. Indicador visual de progresso do pulso (anel de timer)
+8. Feedback visual/sonoro de morte diferenciado
+9. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
+10. HUD com score e combo
+11. Testar em dispositivo real desde cedo
