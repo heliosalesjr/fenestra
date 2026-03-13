@@ -8,12 +8,12 @@ enum State { ON_CIRCLE, MOVING, DEAD }
 const PLAYER_RADIUS := 12.0
 const PLAYER_COLOR  := Color(1.0, 0.85, 0.2)
 const DEAD_COLOR    := Color(1.0, 0.2, 0.2)
-const MOVE_DURATION := 0.14   # segundos do centro ao centro
+const MOVE_DURATION := 0.14
 
 var state: State = State.ON_CIRCLE
-
-var current_circle:     Node2D = null
+var current_circle: Node2D = null
 var destination_circle: Node2D = null
+var _active_tween: Tween = null
 
 
 func _draw() -> void:
@@ -21,15 +21,16 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, PLAYER_RADIUS, color)
 
 
-# ---------------------------------------------------------------------------
-# API pública
-# ---------------------------------------------------------------------------
+func _process(_delta: float) -> void:
+	if state == State.MOVING and destination_circle:
+		_check_orbiter_collision()
+
 
 func attach_to_circle(circle: Node2D) -> void:
-	current_circle     = circle
+	current_circle = circle
 	destination_circle = null
-	state              = State.ON_CIRCLE
-	global_position    = circle.global_position
+	state = State.ON_CIRCLE
+	global_position = circle.global_position
 	queue_redraw()
 
 
@@ -37,33 +38,22 @@ func move_to(target: Node2D) -> void:
 	if state != State.ON_CIRCLE:
 		return
 	destination_circle = target
-	state              = State.MOVING
-
-	var tween := create_tween()
-	tween.tween_property(self, "global_position", target.global_position, MOVE_DURATION) \
-		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
-	tween.tween_callback(_on_arrived)
+	state = State.MOVING
+	_active_tween = create_tween()
+	_active_tween.tween_property(self, "global_position", target.global_position, MOVE_DURATION).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
+	_active_tween.tween_callback(_on_arrived)
 
 
 func respawn(circle: Node2D) -> void:
 	attach_to_circle(circle)
 
 
-# ---------------------------------------------------------------------------
-# Chegada ao destino
-# ---------------------------------------------------------------------------
-
 func _on_arrived() -> void:
 	var circle := destination_circle
 	if not circle:
 		return
-
-	# Ângulo de entrada: direção da origem → destino,
-	# expressa como vetor do centro do destino apontando de volta para a origem.
-	# É o ponto da borda por onde o player "atravessou".
-	var from_pos          := current_circle.global_position if current_circle else global_position
+	var from_pos := current_circle.global_position if current_circle else global_position
 	var approach_angle_deg := rad_to_deg((from_pos - circle.global_position).angle())
-
 	if circle.is_landing_valid(approach_angle_deg):
 		attach_to_circle(circle)
 		landed_on.emit(circle)
@@ -71,7 +61,20 @@ func _on_arrived() -> void:
 		_die(circle.last_fail_reason)
 
 
+func _check_orbiter_collision() -> void:
+	for child in destination_circle.get_children():
+		if not child.has_method("fade_and_free"):
+			continue
+		var orb_radius: float = child.get("sphere_radius")
+		if global_position.distance_to(child.global_position) < PLAYER_RADIUS + orb_radius:
+			_die("orbiter")
+			return
+
+
 func _die(reason: String) -> void:
+	if _active_tween:
+		_active_tween.kill()
+		_active_tween = null
 	state = State.DEAD
 	queue_redraw()
 	player_died.emit(reason)

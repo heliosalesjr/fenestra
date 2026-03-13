@@ -43,6 +43,12 @@ var last_fail_reason: String = ""
 
 var _pulse_timer: float = 0.0
 
+## Número de orbiters gerados proceduralmente no _ready().
+@export var orbiter_count: int = 0
+## Multiplicador base do raio de órbita em relação a circle_radius.
+## Cada orbiter ainda varia individualmente entre 0.9x e 1.7x desse valor.
+@export var orbiter_base_radius_mult: float = 1.5
+
 @onready var rotation_root: Node2D      = $RotationRoot
 @onready var arc_visual: Node2D         = $RotationRoot/ArcVisual
 @onready var collision_shape: CollisionShape2D = $Area2D/CollisionShape2D
@@ -52,6 +58,8 @@ func _ready() -> void:
 	_sync_arc_visual()
 	_sync_active_state()
 	_sync_collision_shape()
+	if not Engine.is_editor_hint() and orbiter_count > 0:
+		_spawn_orbiters()
 
 
 func _process(delta: float) -> void:
@@ -70,6 +78,24 @@ func _process(delta: float) -> void:
 # ---------------------------------------------------------------------------
 # API pública
 # ---------------------------------------------------------------------------
+
+## Gera orbiters proceduralmente com tamanhos, raios e velocidades aleatórios.
+## Raio de órbita proporcional a circle_radius * orbiter_base_radius_mult.
+func _spawn_orbiters() -> void:
+	var scene := preload("res://scenes/Orbiter.tscn")
+	for i in orbiter_count:
+		var orb: Node2D = scene.instantiate()
+		add_child(orb)
+		orb.orbit_radius  = circle_radius * orbiter_base_radius_mult * randf_range(0.9, 1.7)
+		orb.orbit_speed   = randf_range(45.0, 140.0) * (1.0 if randf() > 0.5 else -1.0)
+		orb.start_angle   = randf() * 360.0
+		orb.sphere_radius = randf_range(3.5, 11.0)
+		orb.sphere_color  = Color(
+			randf_range(0.75, 1.0),
+			randf_range(0.1,  0.5),
+			randf_range(0.1,  0.35)
+		)
+
 
 ## Faz todos os orbiters filhos sumirem (chamado pelo Game ao pousar neste círculo).
 func clear_orbiters() -> void:
