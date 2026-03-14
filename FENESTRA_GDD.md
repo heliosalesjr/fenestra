@@ -37,9 +37,10 @@ Cada círculo alterna entre estado **ativo** e **inativo** em ciclos.
 ### 3. Orbiters
 Pequenas esferas que orbitam ao redor de certos círculos em padrões variados.
 - Se o jogador chegar a um círculo que possui orbiters, eles fazem **fade out** e somem.
-- Os orbiters são puramente visuais/atmosféricos na versão atual — não causam morte por contato.
+- **Contato com orbiter durante o movimento = morte** (verificado frame a frame em `_check_orbiter_collision()`).
 - Tamanhos, velocidades e ângulos de início variáveis por orbiter.
 - Podem orbitar em sentidos e raios diferentes no mesmo círculo.
+- Gerados proceduralmente em `_ready()` com `orbiter_count` e `orbiter_base_radius_mult`.
 
 ### Combinação
 Nas fases avançadas, as três condições se aplicam simultaneamente.
@@ -216,17 +217,39 @@ Completará uma volta e mudará de cor quando o estado vai mudar.
 
 ---
 
-## Nível 1 — demonstração (implementado)
+## Demo — 3 níveis (implementado em Game.tscn)
 
-Introduz as três mecânicas em sequência, uma por círculo:
+13 círculos ao todo. Cada nível introduz exatamente um tipo de perigo novo. Os checkpoints (bg_number visível) são ponto de respawn e separação visual de fase.
 
-| Círculo | Posição | Perigo | Detalhe |
-|---------|---------|--------|---------|
-| Circle0 | (195, 720) | Nenhum | Partida |
-| Circle1 | (100, 555) | Arcos | 2 arcos bloqueados, 70°/s |
-| Circle2 | (290, 395) | Pulso | 1.3s ativo / 0.8s inativo, −55°/s |
-| Circle3 | (105, 235) | Orbiters + arco | 3 orbiters em triângulo (120° apart), 80°/s |
-| Circle4 | (200,  80) | Nenhum | Checkpoint |
+### Nível 1 — Arcos
+
+| Círculo | Posição | Raio | Vel. (°/s) | Perigo |
+|---------|---------|------|------------|--------|
+| CircleStart | (195, 900) | 72 | 0 | Nenhum — partida (bg_number=1) |
+| ArcA | (70, 600) | 50 | +72 | Arco bloqueado [25°, 155°] |
+| ArcB | (320, 290) | 82 | −42 | 2 arcos: [10°,75°] e [195°,260°] |
+| ArcC | (95, −20) | 58 | +96 | Arco bloqueado [15°, 195°] |
+| CP1 | (240, −310) | 70 | 0 | Checkpoint (bg_number=2) |
+
+### Nível 2 — Pulso
+
+| Círculo | Posição | Raio | Vel. (°/s) | Ativo / Inativo |
+|---------|---------|------|------------|-----------------|
+| PulseA | (70, −610) | 65 | −58 | 1.8s / 0.7s |
+| PulseB | (315, −920) | 52 | +78 | 0.6s / 1.4s |
+| PulseC | (85, −1220) | 76 | −38 | 2.0s / 0.45s |
+| CP2 | (250, −1510) | 70 | 0 | Checkpoint (bg_number=3) |
+
+### Nível 3 — Orbiters
+
+| Círculo | Posição | Raio | Vel. (°/s) | Orbiters |
+|---------|---------|------|------------|----------|
+| OrbA | (70, −1810) | 62 | +65 | 9, raio mult=1.55 |
+| OrbB | (318, −2120) | 74 | −52 | 18, raio mult=1.85 |
+| OrbC | (88, −2420) | 54 | +90 | 28, raio mult=2.1 |
+| CircleEnd | (205, −2710) | 78 | 0 | Final (bg_number=4) |
+
+> Os raios de órbita e velocidades dos orbiters são gerados proceduralmente em `_ready()` com `randf_range()`. O número exibido no centro dos checkpoints usa `ThemeDB.fallback_font` com `circle_radius * 1.15` como tamanho, opacidade 13%.
 
 ---
 
@@ -249,7 +272,6 @@ Introduz as três mecânicas em sequência, uma por círculo:
 - ❌ Multiplayer ou ranking online
 - ❌ Monetização
 - ❌ Efeitos de partícula elaborados
-- ❌ Orbiters causando morte por contato (por enquanto são visuais)
 
 ---
 
@@ -260,9 +282,13 @@ Introduz as três mecânicas em sequência, uma por círculo:
 3. ✅ `Player.tscn` — movimento centro-a-centro estilo Orbia
 4. ✅ `Game.tscn` — nível 1 com as três mecânicas
 5. ✅ Pulso implementado em `Circle.gd`
-6. ✅ `Orbiter.tscn` com fade ao pousar
-7. Indicador visual de progresso do pulso (anel de timer)
-8. Feedback visual/sonoro de morte diferenciado
-9. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
-10. HUD com score e combo
-11. Testar em dispositivo real desde cedo
+6. ✅ `Orbiter.tscn` com fade ao pousar e morte por contato
+7. ✅ Demo de 3 níveis (arcos → pulso → orbiters) em `Game.tscn`
+8. ✅ Checkpoint visual com `bg_number` (1–4) desenhado no centro
+9. ✅ Morte ao sair por arco bloqueado ou círculo inativo
+10. Indicador visual de progresso do pulso (anel de timer ao redor da borda)
+11. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
+12. Respawn no checkpoint mais recente (atualmente sempre reinicia do círculo 0)
+13. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
+14. HUD com score e combo
+15. Testar em dispositivo real desde cedo

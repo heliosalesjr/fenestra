@@ -45,13 +45,29 @@ var _pulse_timer: float = 0.0
 
 ## Número de orbiters gerados proceduralmente no _ready().
 @export var orbiter_count: int = 0
-## Multiplicador base do raio de órbita em relação a circle_radius.
-## Cada orbiter ainda varia individualmente entre 0.9x e 1.7x desse valor.
 @export var orbiter_base_radius_mult: float = 1.5
+
+## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
+@export var bg_number: int = 0:
+	set(value):
+		bg_number = value
+		queue_redraw()
 
 @onready var rotation_root: Node2D      = $RotationRoot
 @onready var arc_visual: Node2D         = $RotationRoot/ArcVisual
 @onready var collision_shape: CollisionShape2D = $Area2D/CollisionShape2D
+
+
+func _draw() -> void:
+	if bg_number <= 0:
+		return
+	var font: Font = ThemeDB.fallback_font
+	var font_size := int(circle_radius * 1.15)
+	var text := str(bg_number)
+	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	draw_string(font, Vector2(-tw * 0.5, font_size * 0.38),
+		text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size,
+		Color(1.0, 1.0, 1.0, 0.13))
 
 
 func _ready() -> void:
@@ -102,6 +118,18 @@ func clear_orbiters() -> void:
 	for child in get_children():
 		if child.has_method("fade_and_free"):
 			child.fade_and_free()
+
+
+## Verifica se é possível SAIR deste círculo na direção world_angle_deg.
+## Mesma lógica de is_landing_valid, mas silenciosa (sem sinais, sem last_fail_reason).
+func can_exit(world_angle_deg: float) -> bool:
+	if not is_active:
+		return false
+	var local_angle := _world_to_local_angle(world_angle_deg)
+	for arc in blocked_arcs:
+		if _angle_in_arc(local_angle, arc.x, arc.y):
+			return false
+	return true
 
 
 ## Verifica se o pouso no ângulo world_angle_deg (em graus, relativo ao centro

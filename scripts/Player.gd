@@ -37,11 +37,19 @@ func attach_to_circle(circle: Node2D) -> void:
 func move_to(target: Node2D) -> void:
 	if state != State.ON_CIRCLE:
 		return
+
 	destination_circle = target
 	state = State.MOVING
 	_active_tween = create_tween()
 	_active_tween.tween_property(self, "global_position", target.global_position, MOVE_DURATION).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
 	_active_tween.tween_callback(_on_arrived)
+
+	# Checagem de SAÍDA: borda escura ou círculo inativo = morte imediata.
+	if current_circle:
+		if not current_circle.get("is_active"):
+			_die("inactive")
+		elif _arc_is_blocked(current_circle, target.global_position - current_circle.global_position):
+			_die("blocked")
 
 
 func respawn(circle: Node2D) -> void:
@@ -59,6 +67,35 @@ func _on_arrived() -> void:
 		landed_on.emit(circle)
 	else:
 		_die(circle.last_fail_reason)
+
+
+# Verifica se a direção `world_dir` (vetor do centro do círculo → ponto na borda)
+# cai num arco bloqueado do círculo. Sem nenhuma chamada a métodos de Circle.gd.
+func _arc_is_blocked(circle: Node2D, world_dir: Vector2) -> bool:
+	var arcs: Array = circle.get("blocked_arcs")
+	if arcs.is_empty():
+		return false
+
+	var rot_root := circle.get_node_or_null("RotationRoot") as Node2D
+	if not rot_root:
+		return false
+
+	# Ângulo do vetor no espaço local do RotationRoot
+	var world_angle_deg := rad_to_deg(world_dir.angle())
+	var local_deg := fmod(world_angle_deg - rot_root.rotation_degrees, 360.0)
+	if local_deg < 0.0:
+		local_deg += 360.0
+
+	for arc in arcs:
+		var s: float = (arc as Vector2).x
+		var e: float = (arc as Vector2).y
+		if s <= e:
+			if local_deg >= s and local_deg <= e:
+				return true
+		else:
+			if local_deg >= s or local_deg <= e:
+				return true
+	return false
 
 
 func _check_orbiter_collision() -> void:

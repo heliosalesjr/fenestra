@@ -6,6 +6,7 @@ extends Node2D
 
 var circles: Array[Node2D] = []
 var current_index: int = 0
+var last_checkpoint_index: int = 0
 
 const RESPAWN_DELAY := 1.0
 
@@ -54,10 +55,12 @@ func _jump_to_next() -> void:
 func _on_player_landed(circle: Node2D) -> void:
 	current_index = circles.find(circle)
 	circle.clear_orbiters()
+	if circle.get("bg_number") > 0:
+		last_checkpoint_index = current_index
 
 
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
-	current_index = 0
-	player.respawn(circles[0])
+	current_index = last_checkpoint_index
+	player.respawn(circles[last_checkpoint_index])

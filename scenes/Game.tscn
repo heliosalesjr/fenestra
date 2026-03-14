@@ -6,42 +6,112 @@
 
 [node name="Game" type="Node2D"]
 script = ExtResource("3_game")
-circle_sequence = [NodePath("Circle0"), NodePath("Circle1"), NodePath("Circle2"), NodePath("Circle3"), NodePath("Circle4")]
+circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd")]
 
-[node name="Circle0" parent="." instance=ExtResource("1_circle")]
-position = Vector2(195, 950)
-circle_radius = 68.0
+; ── NÍVEL 1 — ARCOS ──────────────────────────────────────────────────────────
+
+[node name="CircleStart" parent="." instance=ExtResource("1_circle")]
+position = Vector2(195, 900)
+circle_radius = 72.0
 rotation_speed = 0.0
 blocked_arcs = Array[Vector2]([])
+bg_number = 1
 
-[node name="Circle1" parent="." instance=ExtResource("1_circle")]
-position = Vector2(75, 630)
-circle_radius = 44.0
-rotation_speed = 75.0
-blocked_arcs = Array[Vector2]([Vector2(20, 160), Vector2(200, 340)])
+[node name="ArcA" parent="." instance=ExtResource("1_circle")]
+position = Vector2(70, 600)
+circle_radius = 50.0
+rotation_speed = 72.0
+blocked_arcs = Array[Vector2]([Vector2(25, 155)])
 
-[node name="Circle2" parent="." instance=ExtResource("1_circle")]
-position = Vector2(315, 290)
-circle_radius = 88.0
-rotation_speed = -50.0
+[node name="ArcB" parent="." instance=ExtResource("1_circle")]
+position = Vector2(320, 290)
+circle_radius = 82.0
+rotation_speed = -42.0
+blocked_arcs = Array[Vector2]([Vector2(10, 75), Vector2(195, 260)])
+
+[node name="ArcC" parent="." instance=ExtResource("1_circle")]
+position = Vector2(95, -20)
+circle_radius = 58.0
+rotation_speed = 96.0
+blocked_arcs = Array[Vector2]([Vector2(15, 195)])
+
+[node name="CP1" parent="." instance=ExtResource("1_circle")]
+position = Vector2(240, -310)
+circle_radius = 70.0
+rotation_speed = 0.0
+blocked_arcs = Array[Vector2]([])
+bg_number = 2
+
+; ── NÍVEL 2 — PULSO ──────────────────────────────────────────────────────────
+
+[node name="PulseA" parent="." instance=ExtResource("1_circle")]
+position = Vector2(70, -610)
+circle_radius = 65.0
+rotation_speed = -58.0
 blocked_arcs = Array[Vector2]([])
 pulse_enabled = true
-pulse_active_duration = 1.3
-pulse_inactive_duration = 0.8
+pulse_active_duration = 1.8
+pulse_inactive_duration = 0.7
 
-[node name="Circle3" parent="." instance=ExtResource("1_circle")]
-position = Vector2(90, -80)
+[node name="PulseB" parent="." instance=ExtResource("1_circle")]
+position = Vector2(315, -920)
 circle_radius = 52.0
-rotation_speed = 85.0
-blocked_arcs = Array[Vector2]([Vector2(40, 140)])
-orbiter_count = 22
-orbiter_base_radius_mult = 1.7
+rotation_speed = 78.0
+blocked_arcs = Array[Vector2]([])
+pulse_enabled = true
+pulse_active_duration = 0.6
+pulse_inactive_duration = 1.4
 
-[node name="Circle4" parent="." instance=ExtResource("1_circle")]
-position = Vector2(270, -430)
-circle_radius = 74.0
+[node name="PulseC" parent="." instance=ExtResource("1_circle")]
+position = Vector2(85, -1220)
+circle_radius = 76.0
+rotation_speed = -38.0
+blocked_arcs = Array[Vector2]([])
+pulse_enabled = true
+pulse_active_duration = 2.0
+pulse_inactive_duration = 0.45
+
+[node name="CP2" parent="." instance=ExtResource("1_circle")]
+position = Vector2(250, -1510)
+circle_radius = 70.0
 rotation_speed = 0.0
 blocked_arcs = Array[Vector2]([])
+bg_number = 3
+
+; ── NÍVEL 3 — ORBITERS ───────────────────────────────────────────────────────
+
+[node name="OrbA" parent="." instance=ExtResource("1_circle")]
+position = Vector2(70, -1810)
+circle_radius = 62.0
+rotation_speed = 65.0
+blocked_arcs = Array[Vector2]([])
+orbiter_count = 9
+orbiter_base_radius_mult = 1.55
+
+[node name="OrbB" parent="." instance=ExtResource("1_circle")]
+position = Vector2(318, -2120)
+circle_radius = 74.0
+rotation_speed = -52.0
+blocked_arcs = Array[Vector2]([])
+orbiter_count = 18
+orbiter_base_radius_mult = 1.85
+
+[node name="OrbC" parent="." instance=ExtResource("1_circle")]
+position = Vector2(88, -2420)
+circle_radius = 54.0
+rotation_speed = 90.0
+blocked_arcs = Array[Vector2]([])
+orbiter_count = 28
+orbiter_base_radius_mult = 2.1
+
+[node name="CircleEnd" parent="." instance=ExtResource("1_circle")]
+position = Vector2(205, -2710)
+circle_radius = 78.0
+rotation_speed = 0.0
+blocked_arcs = Array[Vector2]([])
+bg_number = 4
+
+; ── PLAYER ───────────────────────────────────────────────────────────────────
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
-position = Vector2(195, 950)
+position = Vector2(195, 900)
