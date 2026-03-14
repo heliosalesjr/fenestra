@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_orbiter"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo com orbiters. Esferas geradas proceduralmente em _ready().
+; Ajuste orbiter_count e orbiter_base_radius_mult para controlar densidade e raio.
+
+[node name="CircleOrbiter" instance=ExtResource("1_base")]
+rotation_speed = 60.0
+circle_radius = 65.0
+blocked_arcs = Array[Vector2]([])
+orbiter_count = 6
+orbiter_base_radius_mult = 1.5

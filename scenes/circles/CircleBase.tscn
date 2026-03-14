@@ -1,14 +1,17 @@
-[gd_scene load_steps=4 format=3 uid="uid://e6exlpm1mrwj"]
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_circle"]
 
-[ext_resource type="Script" path="res://scripts/Circle.gd" id="1_circle"]
-[ext_resource type="Script" path="res://scripts/ArcVisual.gd" id="2_arcvisual"]
+[ext_resource type="Script" path="res://scripts/circles/Circle.gd" id="1_circle"]
+[ext_resource type="Script" path="res://scripts/circles/ArcVisual.gd" id="2_arcvisual"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_landing"]
-radius = 78.0
+radius = 80.0
 
 [node name="Circle" type="Node2D"]
 script = ExtResource("1_circle")
-bg_number = null
+rotation_speed = 90.0
+circle_radius = 80.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150), Vector2(210, 330)])
+is_active = true
 
 [node name="RotationRoot" type="Node2D" parent="."]
 

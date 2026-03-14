@@ -104,23 +104,47 @@ Cada nível introduz **exatamente uma variável nova**. Nunca subir dois eixos d
 fenestra/
 ├── project.godot
 ├── scenes/
-│   ├── Game.tscn              # cena principal / nível 1 de demonstração
-│   ├── Circle.tscn            # círculo giratório (cena reutilizável)
-│   ├── Player.tscn            # personagem/bolinha
-│   ├── Orbiter.tscn           # esfera orbitante (cena reutilizável)
-│   ├── UI.tscn                # HUD (score, indicador de pulso) — pendente
-│   └── MainMenu.tscn          # pendente
+│   ├── game/
+│   │   └── Game.tscn                  # cena principal do demo
+│   ├── circles/
+│   │   ├── CircleBase.tscn            # template base (não usar diretamente em níveis)
+│   │   ├── CircleCheckpoint.tscn      # sem perigo, bg_number, respawn
+│   │   ├── CircleArc.tscn             # perigo: arcos bloqueados
+│   │   ├── CirclePulse.tscn           # perigo: pulso ativo/inativo
+│   │   └── CircleOrbiter.tscn         # perigo: esferas orbitantes
+│   ├── entities/
+│   │   ├── Player.tscn                # personagem/bolinha + Camera2D
+│   │   └── Orbiter.tscn               # esfera orbitante
+│   └── ui/                            # pendente
+│       ├── UI.tscn                    # HUD — pendente
+│       └── MainMenu.tscn              # pendente
 ├── scripts/
-│   ├── Game.gd                # lógica principal, input, linhas de conexão
-│   ├── Circle.gd              # rotação, arcos, pulso, clear_orbiters
-│   ├── Player.gd              # movimento centro-a-centro, detecção de pouso, morte
-│   ├── Orbiter.gd             # órbita, fade_and_free
-│   └── PhaseConfig.gd         # dados de configuração por fase — pendente
+│   ├── game/
+│   │   └── Game.gd                    # lógica principal, input, checkpoint
+│   ├── circles/
+│   │   ├── Circle.gd                  # rotação, arcos, pulso, orbiters
+│   │   └── ArcVisual.gd               # desenho de arcos via _draw()
+│   ├── entities/
+│   │   ├── Player.gd                  # movimento, colisão, morte
+│   │   └── Orbiter.gd                 # órbita, fade_and_free
+│   └── PhaseConfig.gd                 # configuração de fase como Resource — pendente
 ├── assets/
 │   ├── audio/
 │   └── sprites/
 └── FENESTRA_GDD.md
 ```
+
+### Cenas especializadas de círculo
+
+Cada cena é uma instância de `CircleBase.tscn` com defaults pré-configurados.
+Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e sobrescreva apenas o necessário.
+
+| Cena | Perigo | Defaults notáveis |
+|------|--------|-------------------|
+| `CircleCheckpoint.tscn` | Nenhum | `rotation_speed=0`, `bg_number=1` |
+| `CircleArc.tscn` | Arco bloqueado | `rotation_speed=60`, `blocked_arcs=[30°,150°]` |
+| `CirclePulse.tscn` | Pulso | `pulse_enabled=true`, `1.3s / 0.8s` |
+| `CircleOrbiter.tscn` | Orbiters | `orbiter_count=6`, `radius_mult=1.5` |
 
 ---
 

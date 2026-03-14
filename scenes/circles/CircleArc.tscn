@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_arc"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo de arcos. Perigo via segmentos bloqueados na borda.
+; Ajuste rotation_speed, circle_radius e blocked_arcs para cada círculo do nível.
+
+[node name="CircleArc" instance=ExtResource("1_base")]
+rotation_speed = 60.0
+circle_radius = 60.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])

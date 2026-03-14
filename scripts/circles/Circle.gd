@@ -98,7 +98,7 @@ func _process(delta: float) -> void:
 ## Gera orbiters proceduralmente com tamanhos, raios e velocidades aleatórios.
 ## Raio de órbita proporcional a circle_radius * orbiter_base_radius_mult.
 func _spawn_orbiters() -> void:
-	var scene := preload("res://scenes/Orbiter.tscn")
+	var scene := preload("res://scenes/entities/Orbiter.tscn")
 	for i in orbiter_count:
 		var orb: Node2D = scene.instantiate()
 		add_child(orb)

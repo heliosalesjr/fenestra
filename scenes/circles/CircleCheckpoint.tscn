@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_checkpoint"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo de checkpoint / partida. Sem perigo.
+; Padrão: rotation_speed=0, sem arcos, sem pulso, sem orbiters.
+; Altere circle_radius e bg_number conforme necessário.
+
+[node name="CircleCheckpoint" instance=ExtResource("1_base")]
+rotation_speed = 0.0
+circle_radius = 72.0
+blocked_arcs = Array[Vector2]([])
+bg_number = 1
