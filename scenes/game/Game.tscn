@@ -18,81 +18,81 @@ position = Vector2(195, 900)
 circle_radius = 72.0
 
 [node name="ArcA" parent="." instance=ExtResource("2_arc")]
-position = Vector2(70, 600)
+position = Vector2(115, 600)
 circle_radius = 50.0
 rotation_speed = 72.0
 blocked_arcs = Array[Vector2]([Vector2(25, 155)])
 
 [node name="ArcB" parent="." instance=ExtResource("2_arc")]
-position = Vector2(320, 290)
+position = Vector2(275, 290)
 circle_radius = 82.0
 rotation_speed = -42.0
 blocked_arcs = Array[Vector2]([Vector2(10, 75), Vector2(195, 260)])
 
 [node name="ArcC" parent="." instance=ExtResource("2_arc")]
-position = Vector2(95, -20)
+position = Vector2(125, -20)
 circle_radius = 58.0
 rotation_speed = 96.0
 blocked_arcs = Array[Vector2]([Vector2(15, 195)])
 
 [node name="CP1" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(240, -310)
+position = Vector2(230, -310)
 circle_radius = 70.0
 bg_number = 2
 
 ; ── NÍVEL 2 — PULSO ──────────────────────────────────────────────────────────
 
 [node name="PulseA" parent="." instance=ExtResource("3_pulse")]
-position = Vector2(70, -610)
+position = Vector2(115, -610)
 circle_radius = 65.0
 rotation_speed = -58.0
 pulse_active_duration = 1.8
 pulse_inactive_duration = 0.7
 
 [node name="PulseB" parent="." instance=ExtResource("3_pulse")]
-position = Vector2(315, -920)
+position = Vector2(270, -920)
 circle_radius = 52.0
 rotation_speed = 78.0
 pulse_active_duration = 0.6
 pulse_inactive_duration = 1.4
 
 [node name="PulseC" parent="." instance=ExtResource("3_pulse")]
-position = Vector2(85, -1220)
+position = Vector2(120, -1220)
 circle_radius = 76.0
 rotation_speed = -38.0
 pulse_active_duration = 2.0
 pulse_inactive_duration = 0.45
 
 [node name="CP2" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(250, -1510)
+position = Vector2(240, -1510)
 circle_radius = 70.0
 bg_number = 3
 
 ; ── NÍVEL 3 — ORBITERS ───────────────────────────────────────────────────────
 
 [node name="OrbA" parent="." instance=ExtResource("4_orbiter")]
-position = Vector2(70, -1810)
+position = Vector2(115, -1810)
 circle_radius = 62.0
 rotation_speed = 65.0
 orbiter_count = 9
 orbiter_base_radius_mult = 1.55
 
 [node name="OrbB" parent="." instance=ExtResource("4_orbiter")]
-position = Vector2(318, -2120)
+position = Vector2(270, -2120)
 circle_radius = 74.0
 rotation_speed = -52.0
 orbiter_count = 18
 orbiter_base_radius_mult = 1.85
 
 [node name="OrbC" parent="." instance=ExtResource("4_orbiter")]
-position = Vector2(88, -2420)
+position = Vector2(120, -2420)
 circle_radius = 54.0
 rotation_speed = 90.0
 orbiter_count = 28
 orbiter_base_radius_mult = 2.1
 
 [node name="CircleEnd" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(205, -2710)
+position = Vector2(195, -2710)
 circle_radius = 78.0
 bg_number = 4
 
