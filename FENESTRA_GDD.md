@@ -221,6 +221,14 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 Linhas cinzas semi-transparentes conectam os círculos na ordem da sequência.
 Desenhadas via `_draw()` no nó raiz do Game.
 
+### Layout horizontal dos círculos
+
+A câmera segue o player em X e Y com position smoothing. Para que todos os centros dos círculos estejam sempre visíveis:
+
+- **Range permitido de X: `[115, 275]`** (viewport de 390px, centros distam no máximo 160px — dentro dos 195px de meia-tela)
+- O padrão zig-zag (esquerda ↔ direita) deve respeitar esse range
+- Nunca posicionar círculos fora desse range, mesmo em novos níveis ou geração procedural
+
 ### Indicador de pulso
 Anel de progresso fino ao redor do círculo (estilo timer circular) — **pendente de implementação**.
 Completará uma volta e mudará de cor quando o estado vai mudar.
