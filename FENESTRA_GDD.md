@@ -105,7 +105,7 @@ fenestra/
 ├── project.godot
 ├── scenes/
 │   ├── game/
-│   │   └── Game.tscn                  # cena principal do demo
+│   │   └── Game.tscn                  # cena principal do demo (inclui Camera2D)
 │   ├── circles/
 │   │   ├── CircleBase.tscn            # template base (não usar diretamente em níveis)
 │   │   ├── CircleCheckpoint.tscn      # sem perigo, bg_number, respawn
@@ -113,20 +113,22 @@ fenestra/
 │   │   ├── CirclePulse.tscn           # perigo: pulso ativo/inativo
 │   │   └── CircleOrbiter.tscn         # perigo: esferas orbitantes
 │   ├── entities/
-│   │   ├── Player.tscn                # personagem/bolinha + Camera2D
+│   │   ├── Player.tscn                # personagem/bolinha (sem Camera2D)
 │   │   └── Orbiter.tscn               # esfera orbitante
-│   └── ui/                            # pendente
-│       ├── UI.tscn                    # HUD — pendente
+│   └── ui/
+│       ├── UI.tscn                    # HUD provisório (vidas, powerups, pause)
 │       └── MainMenu.tscn              # pendente
 ├── scripts/
 │   ├── game/
-│   │   └── Game.gd                    # lógica principal, input, checkpoint
+│   │   └── Game.gd                    # lógica principal, input, checkpoint, câmera
 │   ├── circles/
 │   │   ├── Circle.gd                  # rotação, arcos, pulso, orbiters
 │   │   └── ArcVisual.gd               # desenho de arcos via _draw()
 │   ├── entities/
 │   │   ├── Player.gd                  # movimento, colisão, morte
 │   │   └── Orbiter.gd                 # órbita, fade_and_free
+│   ├── ui/
+│   │   └── UIOverlay.gd               # desenho do HUD + lógica de pause
 │   └── PhaseConfig.gd                 # configuração de fase como Resource — pendente
 ├── assets/
 │   ├── audio/
@@ -180,6 +182,7 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - Em caso de morte: fica vermelho, emite `player_died(reason)`
 - Estados: `ON_CIRCLE` | `MOVING` | `DEAD`
 - Sinais: `landed_on(circle)`, `player_died(reason)`
+- **Não possui Camera2D** — câmera é controlada por `Game.gd`
 
 ### Orbiter.gd — responsabilidades
 - Orbita ao redor do centro do nó pai (que é um Circle)
@@ -200,8 +203,16 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - Mantém `circle_sequence: Array[NodePath]` (configurado no editor)
 - `_draw()`: desenha linhas de conexão entre círculos consecutivos
 - Input: toque/clique → `player.move_to(next_circle)`
-- `_on_player_landed`: atualiza índice, chama `circle.clear_orbiters()`
-- `_on_player_died`: aguarda 1s e chama `player.respawn(circles[0])`
+- `_on_player_landed`: atualiza `current_index`, salva `last_checkpoint_index` se for checkpoint
+- `_on_player_died`: aguarda 1s e chama `player.respawn(circles[last_checkpoint_index])`
+- **Controla a Camera2D** via `_update_camera(delta)` a cada frame (ver seção Câmera)
+
+### UIOverlay.gd — responsabilidades
+- Desenhado via `_draw()` num `Control` dentro de `CanvasLayer` (sempre visível, process_mode=ALWAYS)
+- Barra superior: fundo semi-transparente, 62px de altura
+- Esquerda: ícones de vida (1 preenchido, 2 apenas contorno)
+- Centro: 3 ícones de powerup (escudo, moeda, ímã) — visuais provisórios
+- Direita: ícone de pause `||`; `PauseBtn` (Button flat invisível) captura o toque e chama `get_tree().paused`
 
 ---
 
@@ -221,9 +232,23 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 Linhas cinzas semi-transparentes conectam os círculos na ordem da sequência.
 Desenhadas via `_draw()` no nó raiz do Game.
 
+### Câmera
+
+`Camera2D` é filho de `Game` (não do Player) e controlado inteiramente por `Game.gd`:
+
+| Eixo | Lógica |
+|------|--------|
+| **Y** | `camera_y = player.y − viewport_h / (6 × zoom)` → player aparece no 1/3 inferior da tela |
+| **X** | `(círculo_atual.x + próximo_círculo.x) / 2` → midpoint estável, não treme durante o tween |
+| **Zoom** | `viewport_h × 5/12 ÷ distância_vertical`, clampado `[0.5, 1.4]` → zoom out quando círculos afastados, zoom in quando próximos |
+
+Ambos Y e zoom são interpolados com `lerp` a cada frame (pos smooth=6.0, zoom smooth=3.5). Câmera inicializada sem lerp em `_ready()` para evitar salto de abertura.
+
+Durante o movimento do player (`State.MOVING`), o "próximo círculo" para cálculo da câmera já é o `destination_circle`, antecipando a transição suavemente.
+
 ### Layout horizontal dos círculos
 
-A câmera segue o player em X e Y com position smoothing. Para que todos os centros dos círculos estejam sempre visíveis:
+Com zoom adaptativo (zoom ≈ 0.78 a 450px de espaçamento), a largura visível é ~500px. Para que todos os centros fiquem sempre visíveis:
 
 - **Range permitido de X: `[80, 310]`** — com o zoom adaptativo (zoom ≈ 0.78 a 450px de espaçamento), a largura visível é ~500px; spread máximo de ~220px entre dois círculos consecutivos deixa cada um a ~110px do midpoint, dentro da margem de 250px
 - O midpoint horizontal da câmera é calculado automaticamente como `(círculo_atual.x + próximo_círculo.x) / 2`
@@ -254,33 +279,35 @@ Completará uma volta e mudará de cor quando o estado vai mudar.
 
 13 círculos ao todo. Cada nível introduz exatamente um tipo de perigo novo. Os checkpoints (bg_number visível) são ponto de respawn e separação visual de fase.
 
+Espaçamento vertical uniforme de **450px** entre todos os círculos. Com zoom ≈ 0.78 isso posiciona o próximo círculo em ~1/4 do topo da tela.
+
 ### Nível 1 — Arcos
 
 | Círculo | Posição | Raio | Vel. (°/s) | Perigo |
 |---------|---------|------|------------|--------|
 | CircleStart | (195, 900) | 72 | 0 | Nenhum — partida (bg_number=1) |
-| ArcA | (70, 600) | 50 | +72 | Arco bloqueado [25°, 155°] |
-| ArcB | (320, 290) | 82 | −42 | 2 arcos: [10°,75°] e [195°,260°] |
-| ArcC | (95, −20) | 58 | +96 | Arco bloqueado [15°, 195°] |
-| CP1 | (240, −310) | 70 | 0 | Checkpoint (bg_number=2) |
+| ArcA | (95, 450) | 50 | +72 | Arco bloqueado [25°, 155°] |
+| ArcB | (295, 0) | 82 | −42 | 2 arcos: [10°,75°] e [195°,260°] |
+| ArcC | (130, −450) | 58 | +96 | Arco bloqueado [15°, 195°] |
+| CP1 | (255, −900) | 70 | 0 | Checkpoint (bg_number=2) |
 
 ### Nível 2 — Pulso
 
 | Círculo | Posição | Raio | Vel. (°/s) | Ativo / Inativo |
 |---------|---------|------|------------|-----------------|
-| PulseA | (70, −610) | 65 | −58 | 1.8s / 0.7s |
-| PulseB | (315, −920) | 52 | +78 | 0.6s / 1.4s |
-| PulseC | (85, −1220) | 76 | −38 | 2.0s / 0.45s |
-| CP2 | (250, −1510) | 70 | 0 | Checkpoint (bg_number=3) |
+| PulseA | (82, −1350) | 65 | −58 | 1.8s / 0.7s |
+| PulseB | (290, −1800) | 52 | +78 | 0.6s / 1.4s |
+| PulseC | (150, −2250) | 76 | −38 | 2.0s / 0.45s |
+| CP2 | (225, −2700) | 70 | 0 | Checkpoint (bg_number=3) |
 
 ### Nível 3 — Orbiters
 
 | Círculo | Posição | Raio | Vel. (°/s) | Orbiters |
 |---------|---------|------|------------|----------|
-| OrbA | (70, −1810) | 62 | +65 | 9, raio mult=1.55 |
-| OrbB | (318, −2120) | 74 | −52 | 18, raio mult=1.85 |
-| OrbC | (88, −2420) | 54 | +90 | 28, raio mult=2.1 |
-| CircleEnd | (205, −2710) | 78 | 0 | Final (bg_number=4) |
+| OrbA | (88, −3150) | 62 | +65 | 9, raio mult=1.55 |
+| OrbB | (300, −3600) | 74 | −52 | 18, raio mult=1.85 |
+| OrbC | (108, −4050) | 54 | +90 | 28, raio mult=2.1 |
+| CircleEnd | (195, −4500) | 78 | 0 | Final (bg_number=4) |
 
 > Os raios de órbita e velocidades dos orbiters são gerados proceduralmente em `_ready()` com `randf_range()`. O número exibido no centro dos checkpoints usa `ThemeDB.fallback_font` com `circle_radius * 1.15` como tamanho, opacidade 13%.
 
@@ -313,15 +340,17 @@ Completará uma volta e mudará de cor quando o estado vai mudar.
 1. ✅ `Circle.tscn` com rotação e arcos via `_draw()`
 2. ✅ `is_landing_valid()` com detecção de ângulo
 3. ✅ `Player.tscn` — movimento centro-a-centro estilo Orbia
-4. ✅ `Game.tscn` — nível 1 com as três mecânicas
+4. ✅ `Game.tscn` — demo de 3 níveis (arcos → pulso → orbiters)
 5. ✅ Pulso implementado em `Circle.gd`
 6. ✅ `Orbiter.tscn` com fade ao pousar e morte por contato
-7. ✅ Demo de 3 níveis (arcos → pulso → orbiters) em `Game.tscn`
-8. ✅ Checkpoint visual com `bg_number` (1–4) desenhado no centro
-9. ✅ Morte ao sair por arco bloqueado ou círculo inativo
-10. Indicador visual de progresso do pulso (anel de timer ao redor da borda)
-11. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
-12. Respawn no checkpoint mais recente (atualmente sempre reinicia do círculo 0)
-13. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
-14. HUD com score e combo
-15. Testar em dispositivo real desde cedo
+7. ✅ Checkpoint visual com `bg_number` (1–4) desenhado no centro
+8. ✅ Morte ao sair por arco bloqueado ou círculo inativo
+9. ✅ Respawn no último checkpoint atingido
+10. ✅ Cenas especializadas por tipo de círculo (`CircleArc`, `CirclePulse`, `CircleOrbiter`, `CircleCheckpoint`)
+11. ✅ `UI.tscn` provisório (vidas, powerups, pause) via `CanvasLayer`
+12. ✅ Câmera dinâmica — player no 1/3 inferior, zoom adaptativo, X centralizado entre círculos
+13. Indicador visual de progresso do pulso (anel de timer ao redor da borda)
+14. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
+15. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
+16. HUD definitivo com score e combo (substituir UI provisória)
+17. Testar em dispositivo real desde cedo
