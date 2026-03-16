@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_ui"]
+
+[ext_resource type="Script" path="res://scripts/ui/UIOverlay.gd" id="1_ui"]
+
+[node name="UI" type="CanvasLayer"]
+process_mode = 3
+
+[node name="TopBar" type="Control" parent="."]
+anchor_right = 1.0
+offset_bottom = 62.0
+mouse_filter = 2
+script = ExtResource("1_ui")
+
+[node name="PauseBtn" type="Button" parent="TopBar"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -54.0
+offset_top = 5.0
+offset_right = -8.0
+offset_bottom = 57.0
+flat = true
+focus_mode = 0
+process_mode = 3

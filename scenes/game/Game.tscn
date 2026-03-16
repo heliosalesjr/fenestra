@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://fenestra_game"]
+[gd_scene load_steps=8 format=3 uid="uid://fenestra_game"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn"        id="2_arc"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleOrbiter.tscn"     id="4_orbiter"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Player.tscn"           id="5_player"]
 [ext_resource type="Script"      path="res://scripts/game/Game.gd"                  id="6_game"]
+[ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn"                     id="7_ui"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
@@ -100,3 +101,7 @@ bg_number = 4
 
 [node name="Player" parent="." instance=ExtResource("5_player")]
 position = Vector2(195, 900)
+
+; ── UI ───────────────────────────────────────────────────────────────────────
+
+[node name="UI" parent="." instance=ExtResource("7_ui")]
