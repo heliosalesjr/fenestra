@@ -225,7 +225,8 @@ Desenhadas via `_draw()` no nó raiz do Game.
 
 A câmera segue o player em X e Y com position smoothing. Para que todos os centros dos círculos estejam sempre visíveis:
 
-- **Range permitido de X: `[115, 275]`** (viewport de 390px, centros distam no máximo 160px — dentro dos 195px de meia-tela)
+- **Range permitido de X: `[80, 310]`** — com o zoom adaptativo (zoom ≈ 0.78 a 450px de espaçamento), a largura visível é ~500px; spread máximo de ~220px entre dois círculos consecutivos deixa cada um a ~110px do midpoint, dentro da margem de 250px
+- O midpoint horizontal da câmera é calculado automaticamente como `(círculo_atual.x + próximo_círculo.x) / 2`
 - O padrão zig-zag (esquerda ↔ direita) deve respeitar esse range
 - Nunca posicionar círculos fora desse range, mesmo em novos níveis ou geração procedural
 
