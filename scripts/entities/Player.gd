@@ -24,6 +24,8 @@ func _draw() -> void:
 func _process(_delta: float) -> void:
 	if state == State.MOVING and destination_circle:
 		_check_orbiter_collision()
+	elif state == State.ON_CIRCLE and current_circle:
+		_check_chaser_collision()
 
 
 func attach_to_circle(circle: Node2D) -> void:
@@ -96,6 +98,18 @@ func _arc_is_blocked(circle: Node2D, world_dir: Vector2) -> bool:
 			if local_deg >= s or local_deg <= e:
 				return true
 	return false
+
+
+## Verifica colisão com chasers enquanto o player está parado no círculo.
+## Orbiters normais nunca alcançam o centro, então só chasers ativam isso.
+func _check_chaser_collision() -> void:
+	for child in current_circle.get_children():
+		if not child.has_method("fade_and_free"):
+			continue
+		var orb_radius: float = child.get("sphere_radius")
+		if global_position.distance_to(child.global_position) < PLAYER_RADIUS + orb_radius:
+			_die("chaser")
+			return
 
 
 func _check_orbiter_collision() -> void:

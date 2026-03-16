@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://fenestra_game"]
+[gd_scene load_steps=9 format=3 uid="uid://fenestra_game"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn"        id="2_arc"]
@@ -7,10 +7,11 @@
 [ext_resource type="PackedScene" path="res://scenes/entities/Player.tscn"           id="5_player"]
 [ext_resource type="Script"      path="res://scripts/game/Game.gd"                  id="6_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn"                     id="7_ui"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleChaser.tscn"      id="8_chaser"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
-circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd")]
+circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4")]
 
 ; ── CÂMERA (controlada por Game.gd) ─────────────────────────────────────────
 
@@ -100,6 +101,37 @@ orbiter_base_radius_mult = 2.1
 position = Vector2(195, -4500)
 circle_radius = 78.0
 bg_number = 4
+
+; ── NÍVEL 4 — ORBITERS PERSEGUIDORES ────────────────────────────────────────
+
+[node name="ChaserA" parent="." instance=ExtResource("8_chaser")]
+position = Vector2(108, -4950)
+circle_radius = 62.0
+rotation_speed = 48.0
+orbiter_count = 2
+orbiter_base_radius_mult = 1.4
+orbiter_chaser = true
+
+[node name="ChaserB" parent="." instance=ExtResource("8_chaser")]
+position = Vector2(282, -5400)
+circle_radius = 70.0
+rotation_speed = -62.0
+orbiter_count = 3
+orbiter_base_radius_mult = 1.35
+orbiter_chaser = true
+
+[node name="ChaserC" parent="." instance=ExtResource("8_chaser")]
+position = Vector2(115, -5850)
+circle_radius = 58.0
+rotation_speed = 78.0
+orbiter_count = 4
+orbiter_base_radius_mult = 1.3
+orbiter_chaser = true
+
+[node name="CP4" parent="." instance=ExtResource("1_checkpoint")]
+position = Vector2(195, -6300)
+circle_radius = 72.0
+bg_number = 5
 
 ; ── PLAYER ───────────────────────────────────────────────────────────────────
 

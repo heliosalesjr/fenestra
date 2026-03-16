@@ -47,6 +47,10 @@ var _pulse_timer: float = 0.0
 @export var orbiter_count: int = 0
 @export var orbiter_base_radius_mult: float = 1.5
 
+## Quando true, ao pousar os orbiters ficam vermelhos e perseguem o player.
+## Game.gd chama activate_chasers() em vez de clear_orbiters() ao pousar.
+@export var orbiter_chaser: bool = false
+
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
 	set(value):
@@ -118,6 +122,21 @@ func clear_orbiters() -> void:
 	for child in get_children():
 		if child.has_method("fade_and_free"):
 			child.fade_and_free()
+
+
+## Ativa o modo perseguidor em todos os orbiters filhos.
+## Chamado pelo Game ao pousar num círculo com orbiter_chaser = true.
+func activate_chasers(target: Node2D) -> void:
+	for child in get_children():
+		if child.has_method("start_chasing"):
+			child.start_chasing(target)
+
+
+## Libera todos os chasers (player saiu do círculo ou morreu).
+func release_chasers() -> void:
+	for child in get_children():
+		if child.has_method("stop_chasing"):
+			child.stop_chasing()
 
 
 ## Verifica se é possível SAIR deste círculo na direção world_angle_deg.

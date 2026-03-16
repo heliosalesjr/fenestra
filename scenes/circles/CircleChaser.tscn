@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_chaser"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo com orbiters perseguidores.
+; Ao pousar: orbiters ficam vermelhos e perseguem o player.
+; Ao sair: orbiters voam para longe e fazem fade out.
+; Ajuste orbiter_count (começa baixo — 2 a 4 já é tenso).
+
+[node name="CircleChaser" instance=ExtResource("1_base")]
+rotation_speed = 50.0
+circle_radius = 65.0
+blocked_arcs = Array[Vector2]([])
+orbiter_count = 3
+orbiter_base_radius_mult = 1.4
+orbiter_chaser = true

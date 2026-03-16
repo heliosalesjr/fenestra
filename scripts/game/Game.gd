@@ -113,6 +113,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _jump_to_next() -> void:
 	if circles.size() < 2:
 		return
+	# Libera chasers antes de sair do círculo atual
+	var cur := circles[current_index]
+	if cur.get("orbiter_chaser"):
+		cur.call("release_chasers")
 	var next_idx := (current_index + 1) % circles.size()
 	player.move_to(circles[next_idx])
 
@@ -121,13 +125,20 @@ func _jump_to_next() -> void:
 
 func _on_player_landed(circle: Node2D) -> void:
 	current_index = circles.find(circle)
-	circle.clear_orbiters()
+	if circle.get("orbiter_chaser"):
+		circle.call("activate_chasers", player)
+	else:
+		circle.clear_orbiters()
 	if circle.get("bg_number") > 0:
 		last_checkpoint_index = current_index
 
 
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
+	# Libera chasers se o player morreu enquanto estava no círculo
+	var cur := circles[current_index]
+	if cur.get("orbiter_chaser"):
+		cur.call("release_chasers")
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
 	current_index = last_checkpoint_index
 	player.respawn(circles[last_checkpoint_index])
