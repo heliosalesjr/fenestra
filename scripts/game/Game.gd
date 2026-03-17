@@ -125,6 +125,8 @@ func _jump_to_next() -> void:
 
 func _on_player_landed(circle: Node2D) -> void:
 	current_index = circles.find(circle)
+	if circle.get("mirror_mode"):
+		circle.call("flip_mirror")
 	if circle.get("orbiter_chaser"):
 		circle.call("activate_chasers", player)
 	else:

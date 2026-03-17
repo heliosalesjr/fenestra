@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_mirror"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo espelho.
+; A cada pouso: rotação inverte e zonas livre/bloqueada trocam (verde ↔ cinza).
+; Força reaprendizado do timing a cada visita.
+; Funciona como os círculos de arco (Nível 1), com o twist da inversão.
+
+[node name="CircleMirror" instance=ExtResource("1_base")]
+rotation_speed = 55.0
+circle_radius = 65.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+mirror_mode = true

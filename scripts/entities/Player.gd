@@ -88,16 +88,21 @@ func _arc_is_blocked(circle: Node2D, world_dir: Vector2) -> bool:
 	if local_deg < 0.0:
 		local_deg += 360.0
 
+	var in_arc := false
 	for arc in arcs:
 		var s: float = (arc as Vector2).x
 		var e: float = (arc as Vector2).y
 		if s <= e:
 			if local_deg >= s and local_deg <= e:
-				return true
+				in_arc = true
+				break
 		else:
 			if local_deg >= s or local_deg <= e:
-				return true
-	return false
+				in_arc = true
+				break
+
+	var mirror_flipped: bool = circle.get("_mirror_flipped")
+	return in_arc != mirror_flipped
 
 
 ## Verifica colisão com chasers enquanto o player está parado no círculo.

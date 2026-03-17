@@ -51,6 +51,10 @@ var _pulse_timer: float = 0.0
 ## Game.gd chama activate_chasers() em vez de clear_orbiters() ao pousar.
 @export var orbiter_chaser: bool = false
 
+## Quando true, a cada pouso a rotação inverte e as zonas livre/bloqueada trocam.
+@export var mirror_mode: bool = false
+var _mirror_flipped: bool = false
+
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
 	set(value):
@@ -132,6 +136,16 @@ func activate_chasers(target: Node2D) -> void:
 			child.start_chasing(target)
 
 
+## Inverte o estado do mirror: troca rotação e zonas livre/bloqueada.
+## Chamado pelo Game ao pousar num círculo com mirror_mode = true.
+func flip_mirror() -> void:
+	if not mirror_mode:
+		return
+	_mirror_flipped = not _mirror_flipped
+	rotation_speed = -rotation_speed
+	_sync_arc_visual()
+
+
 ## Libera todos os chasers (player saiu do círculo ou morreu).
 func release_chasers() -> void:
 	for child in get_children():
@@ -145,10 +159,13 @@ func can_exit(world_angle_deg: float) -> bool:
 	if not is_active:
 		return false
 	var local_angle := _world_to_local_angle(world_angle_deg)
+	var in_arc := false
 	for arc in blocked_arcs:
 		if _angle_in_arc(local_angle, arc.x, arc.y):
-			return false
-	return true
+			in_arc = true
+			break
+	# Normal: bloqueado se in_arc. Mirror flip: bloqueado se NOT in_arc.
+	return in_arc == _mirror_flipped
 
 
 ## Verifica se o pouso no ângulo world_angle_deg (em graus, relativo ao centro
@@ -160,12 +177,18 @@ func is_landing_valid(world_angle_deg: float) -> bool:
 		return false
 
 	var local_angle := _world_to_local_angle(world_angle_deg)
-
+	var in_arc := false
 	for arc in blocked_arcs:
 		if _angle_in_arc(local_angle, arc.x, arc.y):
-			last_fail_reason = "blocked"
-			landing_failed.emit("blocked")
-			return false
+			in_arc = true
+			break
+
+	# Normal: bloqueado se in_arc. Mirror flip: bloqueado se NOT in_arc.
+	var blocked := in_arc != _mirror_flipped
+	if blocked:
+		last_fail_reason = "blocked"
+		landing_failed.emit("blocked")
+		return false
 
 	last_fail_reason = ""
 	return true
@@ -194,8 +217,9 @@ func _angle_in_arc(angle: float, start: float, end: float) -> bool:
 func _sync_arc_visual() -> void:
 	if not is_node_ready():
 		return
-	arc_visual.circle_radius = circle_radius
-	arc_visual.blocked_arcs  = blocked_arcs
+	arc_visual.circle_radius  = circle_radius
+	arc_visual.blocked_arcs   = blocked_arcs
+	arc_visual.mirror_flipped = _mirror_flipped
 	arc_visual.queue_redraw()
 
 

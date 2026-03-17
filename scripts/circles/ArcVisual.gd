@@ -11,15 +11,20 @@ const ARC_POINTS    := 64
 
 var circle_radius: float = 80.0
 var blocked_arcs: Array = []  # Array de Vector2(start_deg, end_deg)
+var mirror_flipped: bool = false
 
 
 func _draw() -> void:
-	# 1. Anel completo na cor livre (verde)
-	draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, ARC_POINTS, FREE_COLOR, ARC_WIDTH)
-
-	# 2. Segmentos bloqueados por cima (cinza escuro, ligeiramente mais grosso)
-	for arc in blocked_arcs:
-		_draw_arc_segment(arc.x, arc.y, BLOCKED_COLOR, ARC_WIDTH + 1.0)
+	if not mirror_flipped:
+		# Normal: anel verde, arcos bloqueados em cinza escuro
+		draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, ARC_POINTS, FREE_COLOR, ARC_WIDTH)
+		for arc in blocked_arcs:
+			_draw_arc_segment(arc.x, arc.y, BLOCKED_COLOR, ARC_WIDTH + 1.0)
+	else:
+		# Invertido: anel cinza, arcos bloqueados em verde (agora são as zonas livres)
+		draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, ARC_POINTS, BLOCKED_COLOR, ARC_WIDTH)
+		for arc in blocked_arcs:
+			_draw_arc_segment(arc.x, arc.y, FREE_COLOR, ARC_WIDTH + 1.0)
 
 
 func _draw_arc_segment(start_deg: float, end_deg: float, color: Color, width: float) -> void:
