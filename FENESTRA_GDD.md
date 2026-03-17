@@ -297,8 +297,11 @@ Com zoom adaptativo (zoom ≈ 0.78 a 450px de espaçamento), a largura visível 
 - Nunca posicionar círculos fora desse range, mesmo em novos níveis ou geração procedural
 
 ### Indicador de pulso
-Anel de progresso fino ao redor do círculo (estilo timer circular) — **pendente de implementação**.
-Completará uma volta e mudará de cor quando o estado vai mudar.
+Anel fino desenhado em `Circle.gd._draw()`, ligeiramente fora do `circle_radius` (+8px), que drena no sentido horário a partir do topo conforme o tempo passa.
+- **Verde** quando o círculo está ativo — mostra quanto tempo ainda resta antes de ficar inativo
+- **Laranja** quando inativo — mostra quanto tempo falta para reativar
+- Quando o anel some completamente, o estado muda no próximo frame
+- Atualizado via `queue_redraw()` a cada frame no `_process()` (só quando `pulse_enabled`)
 
 ### Morte
 - Bola fica vermelha por 1s antes do respawn
@@ -460,7 +463,7 @@ Espaçamento vertical uniforme de **450px** entre todos os círculos. Com zoom �
 12. ✅ Câmera dinâmica — player no 1/3 inferior, zoom adaptativo, X centralizado entre círculos
 13. ✅ Orbiter perseguidor (`CircleChaser.tscn`) — nível 4 implementado
 14. ✅ Círculo espelho (`CircleMirror.tscn`) — nível 5 implementado
-15. Indicador visual de progresso do pulso (anel de timer ao redor da borda)
+15. ✅ Indicador visual de progresso do pulso (anel de timer ao redor da borda)
 16. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
 17. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
 18. HUD definitivo com score e combo (substituir UI provisória)

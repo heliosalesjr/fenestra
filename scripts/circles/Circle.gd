@@ -66,16 +66,32 @@ var _mirror_flipped: bool = false
 @onready var collision_shape: CollisionShape2D = $Area2D/CollisionShape2D
 
 
+const PULSE_RING_OFFSET := 8.0   # distância do anel ao círculo (px)
+const PULSE_RING_WIDTH  := 3.5   # espessura do anel
+const PULSE_RING_ACTIVE_COLOR   := Color(0.2,  0.9,  0.3,  0.75)
+const PULSE_RING_INACTIVE_COLOR := Color(1.0,  0.55, 0.1,  0.75)
+
+
 func _draw() -> void:
-	if bg_number <= 0:
-		return
-	var font: Font = ThemeDB.fallback_font
-	var font_size := int(circle_radius * 1.15)
-	var text := str(bg_number)
-	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	draw_string(font, Vector2(-tw * 0.5, font_size * 0.38),
-		text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size,
-		Color(1.0, 1.0, 1.0, 0.13))
+	if bg_number > 0:
+		var font: Font = ThemeDB.fallback_font
+		var font_size := int(circle_radius * 1.15)
+		var text := str(bg_number)
+		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		draw_string(font, Vector2(-tw * 0.5, font_size * 0.38),
+			text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size,
+			Color(1.0, 1.0, 1.0, 0.13))
+
+	if pulse_enabled:
+		var duration: float = pulse_active_duration if is_active else pulse_inactive_duration
+		var remaining: float = 1.0 - clampf(_pulse_timer / duration, 0.0, 1.0)
+		var span: float = TAU * remaining
+		if span > 0.01:
+			var ring_r: float = circle_radius + PULSE_RING_OFFSET
+			var color: Color = PULSE_RING_ACTIVE_COLOR if is_active else PULSE_RING_INACTIVE_COLOR
+			var pts: int = max(4, int(remaining * 64))
+			# Começa no topo (−PI/2) e drena no sentido horário
+			draw_arc(Vector2.ZERO, ring_r, -PI * 0.5, -PI * 0.5 + span, pts, color, PULSE_RING_WIDTH)
 
 
 func _ready() -> void:
@@ -97,6 +113,7 @@ func _process(delta: float) -> void:
 		if _pulse_timer >= duration:
 			_pulse_timer = 0.0
 			is_active = !is_active
+		queue_redraw()
 
 
 # ---------------------------------------------------------------------------
