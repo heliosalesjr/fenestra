@@ -4,10 +4,12 @@ extends Node2D
 
 @onready var player: Node2D  = $Player
 @onready var _camera: Camera2D = $Camera2D
+@onready var _ui: Control = $UI/TopBar
 
 var circles: Array[Node2D] = []
 var current_index: int = 0
 var last_checkpoint_index: int = 0
+var lives: int = 3
 
 const RESPAWN_DELAY  := 1.0
 const VIEWPORT_H     := 844.0
@@ -141,6 +143,11 @@ func _on_player_died(reason: String) -> void:
 	var cur := circles[current_index]
 	if cur.get("orbiter_chaser"):
 		cur.call("release_chasers")
+	lives -= 1
+	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
+	if lives <= 0:
+		_ui.show_game_over()
+		return
 	current_index = last_checkpoint_index
 	player.respawn(circles[last_checkpoint_index])

@@ -68,7 +68,7 @@ var _mirror_flipped: bool = false
 
 const PULSE_RING_OFFSET := 8.0   # distância do anel ao círculo (px)
 const PULSE_RING_WIDTH  := 3.5   # espessura do anel
-const PULSE_RING_ACTIVE_COLOR   := Color(0.2,  0.9,  0.3,  0.75)
+const PULSE_RING_ACTIVE_COLOR   := Color(0.9,  0.95, 1.0,  0.75)
 const PULSE_RING_INACTIVE_COLOR := Color(1.0,  0.55, 0.1,  0.75)
 
 
