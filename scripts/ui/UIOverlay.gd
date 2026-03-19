@@ -125,7 +125,7 @@ func _draw_game_over() -> void:
 	draw_string(font, Vector2((VIEWPORT_W - tw) * 0.5, VIEWPORT_H * 0.42),
 		title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size, Color(1.0, 0.85, 0.2, 1.0))
 
-	var sub      := "toque para reiniciar"
+	var sub      := "tap to restart"
 	var sub_size := 22
 	var sw       := font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_size).x
 	draw_string(font, Vector2((VIEWPORT_W - sw) * 0.5, VIEWPORT_H * 0.54),

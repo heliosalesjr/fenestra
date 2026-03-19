@@ -170,6 +170,24 @@ func release_chasers() -> void:
 			child.stop_chasing()
 
 
+## Remove instantaneamente todos os orbiters e os recria.
+## Chamado pelo Game ao respawnar, para restaurar o estado original do círculo.
+func reset_orbiters() -> void:
+	if orbiter_count <= 0:
+		return
+	for child in get_children():
+		if child.has_method("fade_and_free"):
+			child.queue_free()
+	_spawn_orbiters()
+
+
+## Reverte o estado do mirror para o inicial (não-flipado).
+## Chamado pelo Game ao respawnar.
+func reset_mirror() -> void:
+	if _mirror_flipped:
+		flip_mirror()
+
+
 ## Verifica se é possível SAIR deste círculo na direção world_angle_deg.
 ## Mesma lógica de is_landing_valid, mas silenciosa (sem sinais, sem last_fail_reason).
 func can_exit(world_angle_deg: float) -> bool:

@@ -150,4 +150,14 @@ func _on_player_died(reason: String) -> void:
 		_ui.show_game_over()
 		return
 	current_index = last_checkpoint_index
+	_reset_circles_after_checkpoint()
 	player.respawn(circles[last_checkpoint_index])
+
+
+func _reset_circles_after_checkpoint() -> void:
+	for i in range(last_checkpoint_index + 1, circles.size()):
+		var c := circles[i]
+		if c.get("orbiter_count") > 0:
+			c.call("reset_orbiters")
+		if c.get("mirror_mode"):
+			c.call("reset_mirror")
