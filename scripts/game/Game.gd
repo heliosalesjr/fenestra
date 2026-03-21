@@ -115,10 +115,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _jump_to_next() -> void:
 	if circles.size() < 2:
 		return
-	# Libera chasers antes de sair do círculo atual
 	var cur := circles[current_index]
 	if cur.get("orbiter_chaser"):
 		cur.call("release_chasers")
+	if cur.get("shrink_enabled"):
+		cur.call("stop_shrinking")
+		_disconnect_shrink(cur)
 	var next_idx := (current_index + 1) % circles.size()
 	player.move_to(circles[next_idx])
 
@@ -133,16 +135,31 @@ func _on_player_landed(circle: Node2D) -> void:
 		circle.call("activate_chasers", player)
 	else:
 		circle.clear_orbiters()
+	if circle.get("shrink_enabled"):
+		circle.call("start_shrinking")
+		if not circle.is_connected("shrink_exploded", _on_shrink_exploded):
+			circle.connect("shrink_exploded", _on_shrink_exploded)
 	if circle.get("bg_number") > 0:
 		last_checkpoint_index = current_index
 
 
+func _on_shrink_exploded() -> void:
+	player.force_die("shrink")
+
+
+func _disconnect_shrink(circle: Node2D) -> void:
+	if circle.is_connected("shrink_exploded", _on_shrink_exploded):
+		circle.disconnect("shrink_exploded", _on_shrink_exploded)
+
+
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
-	# Libera chasers se o player morreu enquanto estava no círculo
 	var cur := circles[current_index]
 	if cur.get("orbiter_chaser"):
 		cur.call("release_chasers")
+	if cur.get("shrink_enabled"):
+		cur.call("stop_shrinking")
+		_disconnect_shrink(cur)
 	lives -= 1
 	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
@@ -161,3 +178,5 @@ func _reset_circles_after_checkpoint() -> void:
 			c.call("reset_orbiters")
 		if c.get("mirror_mode"):
 			c.call("reset_mirror")
+		if c.get("shrink_enabled"):
+			c.call("stop_shrinking")

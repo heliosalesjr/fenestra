@@ -5,6 +5,7 @@ extends Node2D
 ## Contém RotationRoot (que gira) com ArcVisual (que desenha os segmentos).
 
 signal landing_failed(reason: String)
+signal shrink_exploded()
 
 ## Razão do último pouso inválido — lida pelo Player após is_landing_valid() retornar false.
 var last_fail_reason: String = ""
@@ -55,6 +56,14 @@ var _pulse_timer: float = 0.0
 @export var mirror_mode: bool = false
 var _mirror_flipped: bool = false
 
+## Quando true, ao pousar o anel externo começa a encolher em direção ao anel interno.
+## Ao tocar o anel interno, explode e o player morre.
+@export var shrink_enabled: bool = false
+@export var inner_radius: float = 28.0   # raio do anel interno fixo
+@export var shrink_speed: float = 18.0   # px/s de encolhimento
+var _shrink_radius: float = 0.0
+var _shrinking: bool = false
+
 ## Quando true, raio, velocidade/direção e padrão de arcos são randomizados no _ready().
 @export var level_randomize: bool = false
 
@@ -64,8 +73,12 @@ const RAND_SPEED_MIN        := 50.0
 const RAND_SPEED_MAX        := 95.0
 const RAND_PULSE_SPEED_MIN  := 35.0
 const RAND_PULSE_SPEED_MAX  := 80.0
-const RAND_MIRROR_SPEED_MIN := 60.0
-const RAND_MIRROR_SPEED_MAX := 110.0
+const RAND_MIRROR_SPEED_MIN  := 60.0
+const RAND_MIRROR_SPEED_MAX  := 110.0
+const RAND_SHRINK_RADIUS_MIN := 65.0
+const RAND_SHRINK_RADIUS_MAX := 88.0
+const RAND_SHRINK_SPEED_MIN  := 14.0   # px/s
+const RAND_SHRINK_SPEED_MAX  := 28.0   # px/s
 
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
@@ -94,6 +107,9 @@ func _draw() -> void:
 			text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size,
 			Color(1.0, 1.0, 1.0, 0.13))
 
+	if shrink_enabled:
+		draw_arc(Vector2.ZERO, inner_radius, 0.0, TAU, 48, Color(0.2, 0.55, 1.0, 0.85), 2.5)
+
 	if pulse_enabled:
 		var duration: float = pulse_active_duration if is_active else pulse_inactive_duration
 		var remaining: float = 1.0 - clampf(_pulse_timer / duration, 0.0, 1.0)
@@ -112,6 +128,7 @@ func _ready() -> void:
 	_sync_arc_visual()
 	_sync_active_state()
 	_sync_collision_shape()
+	_shrink_radius = circle_radius
 	if not Engine.is_editor_hint() and orbiter_count > 0:
 		_spawn_orbiters()
 
@@ -128,6 +145,15 @@ func _process(delta: float) -> void:
 			_pulse_timer = 0.0
 			is_active = !is_active
 		queue_redraw()
+
+	if _shrinking:
+		_shrink_radius -= shrink_speed * delta
+		arc_visual.circle_radius = _shrink_radius
+		arc_visual.queue_redraw()
+		queue_redraw()
+		if _shrink_radius <= inner_radius:
+			_shrinking = false
+			shrink_exploded.emit()
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +191,25 @@ func activate_chasers(target: Node2D) -> void:
 	for child in get_children():
 		if child.has_method("start_chasing"):
 			child.start_chasing(target)
+
+
+## Inicia o encolhimento do anel externo em direção ao inner_radius.
+## Chamado pelo Game ao pousar num círculo com shrink_enabled = true.
+func start_shrinking() -> void:
+	if not shrink_enabled:
+		return
+	_shrink_radius = circle_radius
+	arc_visual.circle_radius = _shrink_radius
+	_shrinking = true
+
+
+## Para o encolhimento e restaura o raio original.
+## Chamado quando o player sai do círculo ou morre.
+func stop_shrinking() -> void:
+	_shrinking = false
+	_shrink_radius = circle_radius
+	arc_visual.circle_radius = circle_radius
+	arc_visual.queue_redraw()
 
 
 ## Inverte o estado do mirror: troca rotação e zonas livre/bloqueada.
@@ -253,6 +298,12 @@ func _apply_random_arc() -> void:
 	rotation_speed = speed if randf() > 0.5 else -speed
 	if orbiter_chaser:
 		_apply_random_chaser_config()
+	elif shrink_enabled:
+		circle_radius  = randf_range(RAND_SHRINK_RADIUS_MIN, RAND_SHRINK_RADIUS_MAX)
+		var spd := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed = spd if randf() > 0.5 else -spd
+		shrink_speed   = randf_range(RAND_SHRINK_SPEED_MIN, RAND_SHRINK_SPEED_MAX)
+		blocked_arcs   = _random_arc_pattern()
 	elif mirror_mode:
 		rotation_speed = (randf_range(RAND_MIRROR_SPEED_MIN, RAND_MIRROR_SPEED_MAX)
 				* (1.0 if randf() > 0.5 else -1.0))

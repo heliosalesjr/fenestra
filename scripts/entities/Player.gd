@@ -127,6 +127,11 @@ func _check_orbiter_collision() -> void:
 			return
 
 
+func force_die(reason: String) -> void:
+	if state != State.DEAD:
+		_die(reason)
+
+
 func _die(reason: String) -> void:
 	if _active_tween:
 		_active_tween.kill()

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://fenestra_game"]
+[gd_scene load_steps=11 format=3 uid="uid://fenestra_game"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn"        id="2_arc"]
@@ -9,10 +9,11 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn"                     id="7_ui"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleChaser.tscn"      id="8_chaser"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleMirror.tscn"      id="9_mirror"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleShrink.tscn"      id="10_shrink"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
-circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5")]
+circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6")]
 
 ; ── CÂMERA (controlada por Game.gd) ─────────────────────────────────────────
 
@@ -125,6 +126,25 @@ level_randomize = true
 position = Vector2(195, -8100)
 circle_radius = 72.0
 bg_number = 6
+
+; ── NÍVEL 6 — ENCOLHEDOR ─────────────────────────────────────────────────────
+
+[node name="ShrinkA" parent="." instance=ExtResource("10_shrink")]
+position = Vector2(108, -8550)
+level_randomize = true
+
+[node name="ShrinkB" parent="." instance=ExtResource("10_shrink")]
+position = Vector2(282, -9000)
+level_randomize = true
+
+[node name="ShrinkC" parent="." instance=ExtResource("10_shrink")]
+position = Vector2(115, -9450)
+level_randomize = true
+
+[node name="CP6" parent="." instance=ExtResource("1_checkpoint")]
+position = Vector2(195, -9900)
+circle_radius = 72.0
+bg_number = 7
 
 ; ── PLAYER ───────────────────────────────────────────────────────────────────
 

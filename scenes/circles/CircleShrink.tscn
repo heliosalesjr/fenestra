@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_shrink"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo encolhedor.
+; Ao pousar, o anel externo começa a encolher em direção ao anel interno (laranja).
+; Quando se tocam → explosão → player morre.
+; Força o player a sair antes que o tempo acabe.
+
+[node name="CircleShrink" instance=ExtResource("1_base")]
+rotation_speed = 70.0
+circle_radius = 78.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+shrink_enabled = true
+inner_radius = 28.0
+shrink_speed = 18.0
