@@ -1,6 +1,1 @@
 res://scripts/circles/Circle.gd
-res://scripts/entities/Orbiter.gd
-res://scripts/entities/Player.gd
-res://scripts/game/Game.gd
-res://scripts/circles/ArcVisual.gd
-res://scripts/ui/UIOverlay.gd

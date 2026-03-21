@@ -55,6 +55,14 @@ var _pulse_timer: float = 0.0
 @export var mirror_mode: bool = false
 var _mirror_flipped: bool = false
 
+## Quando true, raio, velocidade/direção e padrão de arcos são randomizados no _ready().
+@export var level_randomize: bool = false
+
+const RAND_RADIUS_MIN := 48.0
+const RAND_RADIUS_MAX := 80.0
+const RAND_SPEED_MIN  := 50.0
+const RAND_SPEED_MAX  := 95.0
+
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
 	set(value):
@@ -95,6 +103,8 @@ func _draw() -> void:
 
 
 func _ready() -> void:
+	if not Engine.is_editor_hint() and level_randomize:
+		_apply_random_arc()
 	_sync_arc_visual()
 	_sync_active_state()
 	_sync_collision_shape()
@@ -227,6 +237,27 @@ func is_landing_valid(world_angle_deg: float) -> bool:
 
 	last_fail_reason = ""
 	return true
+
+
+# ---------------------------------------------------------------------------
+# Randomização de nível
+# ---------------------------------------------------------------------------
+
+func _apply_random_arc() -> void:
+	circle_radius = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+	var speed := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+	rotation_speed = speed if randf() > 0.5 else -speed
+	blocked_arcs = _random_arc_pattern()
+
+
+func _random_arc_pattern() -> Array[Vector2]:
+	var p0: Array[Vector2] = [Vector2(30,  150)]
+	var p1: Array[Vector2] = [Vector2(15,  175)]
+	var p2: Array[Vector2] = [Vector2(200, 340)]
+	var p3: Array[Vector2] = [Vector2(10,  70),  Vector2(190, 250)]
+	var p4: Array[Vector2] = [Vector2(40,  110), Vector2(210, 285)]
+	var patterns: Array    = [p0, p1, p2, p3, p4]
+	return patterns[randi() % patterns.size()]
 
 
 # ---------------------------------------------------------------------------
