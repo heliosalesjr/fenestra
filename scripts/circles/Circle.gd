@@ -58,10 +58,12 @@ var _mirror_flipped: bool = false
 ## Quando true, raio, velocidade/direção e padrão de arcos são randomizados no _ready().
 @export var level_randomize: bool = false
 
-const RAND_RADIUS_MIN := 48.0
-const RAND_RADIUS_MAX := 80.0
-const RAND_SPEED_MIN  := 50.0
-const RAND_SPEED_MAX  := 95.0
+const RAND_RADIUS_MIN       := 48.0
+const RAND_RADIUS_MAX       := 80.0
+const RAND_SPEED_MIN        := 50.0
+const RAND_SPEED_MAX        := 95.0
+const RAND_PULSE_SPEED_MIN  := 35.0
+const RAND_PULSE_SPEED_MAX  := 80.0
 
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
@@ -245,9 +247,27 @@ func is_landing_valid(world_angle_deg: float) -> bool:
 
 func _apply_random_arc() -> void:
 	circle_radius = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
-	var speed := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
-	rotation_speed = speed if randf() > 0.5 else -speed
-	blocked_arcs = _random_arc_pattern()
+	if pulse_enabled:
+		var speed := randf_range(RAND_PULSE_SPEED_MIN, RAND_PULSE_SPEED_MAX)
+		rotation_speed = speed if randf() > 0.5 else -speed
+		_apply_random_pulse_timing()
+	else:
+		var speed := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed = speed if randf() > 0.5 else -speed
+		blocked_arcs = _random_arc_pattern()
+
+
+func _apply_random_pulse_timing() -> void:
+	var timings: Array = [
+		[1.8, 0.7],
+		[1.5, 0.9],
+		[0.7, 1.4],
+		[2.0, 0.5],
+		[1.0, 1.2],
+	]
+	var t: Array = timings[randi() % timings.size()]
+	pulse_active_duration   = t[0]
+	pulse_inactive_duration = t[1]
 
 
 func _random_arc_pattern() -> Array[Vector2]:
