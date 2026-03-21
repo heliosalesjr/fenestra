@@ -64,6 +64,8 @@ const RAND_SPEED_MIN        := 50.0
 const RAND_SPEED_MAX        := 95.0
 const RAND_PULSE_SPEED_MIN  := 35.0
 const RAND_PULSE_SPEED_MAX  := 80.0
+const RAND_MIRROR_SPEED_MIN := 60.0
+const RAND_MIRROR_SPEED_MAX := 110.0
 
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
@@ -251,6 +253,10 @@ func _apply_random_arc() -> void:
 	rotation_speed = speed if randf() > 0.5 else -speed
 	if orbiter_chaser:
 		_apply_random_chaser_config()
+	elif mirror_mode:
+		rotation_speed = (randf_range(RAND_MIRROR_SPEED_MIN, RAND_MIRROR_SPEED_MAX)
+				* (1.0 if randf() > 0.5 else -1.0))
+		blocked_arcs = _random_arc_pattern()
 	elif pulse_enabled:
 		rotation_speed = (randf_range(RAND_PULSE_SPEED_MIN, RAND_PULSE_SPEED_MAX)
 				* (1.0 if randf() > 0.5 else -1.0))

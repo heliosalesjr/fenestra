@@ -111,24 +111,15 @@ bg_number = 5
 
 [node name="MirrorA" parent="." instance=ExtResource("9_mirror")]
 position = Vector2(105, -6750)
-circle_radius = 60.0
-rotation_speed = 55.0
-blocked_arcs = Array[Vector2]([Vector2(40, 160)])
-mirror_mode = true
+level_randomize = true
 
 [node name="MirrorB" parent="." instance=ExtResource("9_mirror")]
 position = Vector2(280, -7200)
-circle_radius = 68.0
-rotation_speed = -65.0
-blocked_arcs = Array[Vector2]([Vector2(20, 120), Vector2(220, 300)])
-mirror_mode = true
+level_randomize = true
 
 [node name="MirrorC" parent="." instance=ExtResource("9_mirror")]
 position = Vector2(112, -7650)
-circle_radius = 62.0
-rotation_speed = 80.0
-blocked_arcs = Array[Vector2]([Vector2(25, 185)])
-mirror_mode = true
+level_randomize = true
 
 [node name="CP5" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -8100)
