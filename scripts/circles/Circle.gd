@@ -247,13 +247,15 @@ func is_landing_valid(world_angle_deg: float) -> bool:
 
 func _apply_random_arc() -> void:
 	circle_radius = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
-	if pulse_enabled:
-		var speed := randf_range(RAND_PULSE_SPEED_MIN, RAND_PULSE_SPEED_MAX)
-		rotation_speed = speed if randf() > 0.5 else -speed
+	var speed := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+	rotation_speed = speed if randf() > 0.5 else -speed
+	if orbiter_chaser:
+		_apply_random_chaser_config()
+	elif pulse_enabled:
+		rotation_speed = (randf_range(RAND_PULSE_SPEED_MIN, RAND_PULSE_SPEED_MAX)
+				* (1.0 if randf() > 0.5 else -1.0))
 		_apply_random_pulse_timing()
 	else:
-		var speed := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
-		rotation_speed = speed if randf() > 0.5 else -speed
 		blocked_arcs = _random_arc_pattern()
 
 
@@ -268,6 +270,20 @@ func _apply_random_pulse_timing() -> void:
 	var t: Array = timings[randi() % timings.size()]
 	pulse_active_duration   = t[0]
 	pulse_inactive_duration = t[1]
+
+
+func _apply_random_chaser_config() -> void:
+	# Cada padrão: [orbiter_count, orbiter_base_radius_mult]
+	var configs: Array = [
+		[2, 1.5],
+		[2, 1.3],
+		[3, 1.4],
+		[3, 1.3],
+		[4, 1.35],
+	]
+	var c: Array = configs[randi() % configs.size()]
+	orbiter_count             = c[0]
+	orbiter_base_radius_mult  = c[1]
 
 
 func _random_arc_pattern() -> Array[Vector2]:

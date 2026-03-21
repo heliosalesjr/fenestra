@@ -8,7 +8,7 @@ extends Node2D
 
 enum Mode { ORBITING, CHASING, FLEEING }
 
-const CHASE_SPEED := 110.0   # px/s em direção ao player
+const CHASE_SPEED := 70.0    # px/s em direção ao player
 const FLEE_SPEED  := 240.0   # px/s ao fugir após o player sair
 
 var _angle_deg: float = 0.0
