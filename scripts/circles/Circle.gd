@@ -77,8 +77,8 @@ const RAND_MIRROR_SPEED_MIN  := 60.0
 const RAND_MIRROR_SPEED_MAX  := 110.0
 const RAND_SHRINK_RADIUS_MIN := 65.0
 const RAND_SHRINK_RADIUS_MAX := 88.0
-const RAND_SHRINK_SPEED_MIN  := 14.0   # px/s
-const RAND_SHRINK_SPEED_MAX  := 28.0   # px/s
+const RAND_SHRINK_SPEED_MIN  := 8.0    # px/s
+const RAND_SHRINK_SPEED_MAX  := 16.0   # px/s
 
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:

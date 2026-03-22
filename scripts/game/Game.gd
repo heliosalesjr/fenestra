@@ -9,7 +9,7 @@ extends Node2D
 var circles: Array[Node2D] = []
 var current_index: int = 0
 var last_checkpoint_index: int = 0
-var lives: int = 3
+var lives: int = 99
 
 const RESPAWN_DELAY  := 1.0
 const VIEWPORT_H     := 844.0

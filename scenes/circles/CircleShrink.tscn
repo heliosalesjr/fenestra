@@ -13,4 +13,4 @@ circle_radius = 78.0
 blocked_arcs = Array[Vector2]([Vector2(30, 150)])
 shrink_enabled = true
 inner_radius = 28.0
-shrink_speed = 18.0
+shrink_speed = 10.0
