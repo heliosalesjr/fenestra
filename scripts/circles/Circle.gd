@@ -6,6 +6,7 @@ extends Node2D
 
 signal landing_failed(reason: String)
 signal shrink_exploded()
+signal drift_exploded()
 
 ## Razão do último pouso inválido — lida pelo Player após is_landing_valid() retornar false.
 var last_fail_reason: String = ""
@@ -64,6 +65,16 @@ var _mirror_flipped: bool = false
 var _shrink_radius: float = 0.0
 var _shrinking: bool = false
 
+## Quando true, ao pousar o círculo deriva horizontalmente em direção às spikes laterais.
+## Combina com pulse_enabled para criar pressão dupla: timing do pulso + urgência de sair.
+@export var drift_enabled: bool = false
+@export var drift_speed: float = 40.0   # px/s de movimento horizontal
+var _drifting: bool = false
+var _drift_direction: float = 0.0
+var _original_position: Vector2 = Vector2.ZERO
+var _drift_returning: bool = false
+var _drift_tween: Tween = null
+
 ## Quando true, raio, velocidade/direção e padrão de arcos são randomizados no _ready().
 @export var level_randomize: bool = false
 
@@ -79,6 +90,10 @@ const RAND_SHRINK_RADIUS_MIN := 65.0
 const RAND_SHRINK_RADIUS_MAX := 88.0
 const RAND_SHRINK_SPEED_MIN  := 8.0    # px/s
 const RAND_SHRINK_SPEED_MAX  := 16.0   # px/s
+const DRIFT_WALL_LEFT        := 40.0   # x mínimo (spike esquerda) em world space
+const DRIFT_WALL_RIGHT       := 350.0  # x máximo (spike direita) em world space
+const RAND_DRIFT_SPEED_MIN   := 25.0   # px/s
+const RAND_DRIFT_SPEED_MAX   := 50.0   # px/s
 
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
@@ -110,6 +125,7 @@ func _draw() -> void:
 	if shrink_enabled:
 		draw_arc(Vector2.ZERO, inner_radius, 0.0, TAU, 48, Color(0.2, 0.55, 1.0, 0.85), 2.5)
 
+
 	if pulse_enabled:
 		var duration: float = pulse_active_duration if is_active else pulse_inactive_duration
 		var remaining: float = 1.0 - clampf(_pulse_timer / duration, 0.0, 1.0)
@@ -129,6 +145,7 @@ func _ready() -> void:
 	_sync_active_state()
 	_sync_collision_shape()
 	_shrink_radius = circle_radius
+	_original_position = position
 	if not Engine.is_editor_hint() and orbiter_count > 0:
 		_spawn_orbiters()
 
@@ -154,6 +171,17 @@ func _process(delta: float) -> void:
 		if _shrink_radius <= inner_radius:
 			_shrinking = false
 			shrink_exploded.emit()
+
+	if _drifting:
+		position.x += _drift_direction * drift_speed * delta
+		queue_redraw()
+		if position.x - circle_radius <= DRIFT_WALL_LEFT or \
+		   position.x + circle_radius >= DRIFT_WALL_RIGHT:
+			_drifting = false
+			drift_exploded.emit()
+
+	if _drift_returning:
+		queue_redraw()
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +238,37 @@ func stop_shrinking() -> void:
 	_shrink_radius = circle_radius
 	arc_visual.circle_radius = circle_radius
 	arc_visual.queue_redraw()
+
+
+## Inicia a deriva horizontal. Direção (esq/dir) é sorteada aleatoriamente.
+## Chamado pelo Game ao pousar num círculo com drift_enabled = true.
+func start_drifting() -> void:
+	if not drift_enabled:
+		return
+	_drift_direction = 1.0 if randf() > 0.5 else -1.0
+	_drifting = true
+
+
+## Para a deriva e anima o círculo de volta à posição original.
+func stop_drifting() -> void:
+	_drifting = false
+	if _drift_tween and _drift_tween.is_valid():
+		_drift_tween.kill()
+	if position.distance_to(_original_position) < 2.0:
+		_drift_returning = false
+		position = _original_position
+		queue_redraw()
+		return
+	_drift_returning = true
+	_drift_tween = create_tween()
+	_drift_tween.set_trans(Tween.TRANS_CUBIC)
+	_drift_tween.set_ease(Tween.EASE_OUT)
+	_drift_tween.tween_property(self, "position", _original_position, 0.5)
+	_drift_tween.tween_callback(func():
+		_drift_returning = false
+		position = _original_position
+		queue_redraw()
+	)
 
 
 ## Inverte o estado do mirror: troca rotação e zonas livre/bloqueada.
@@ -304,6 +363,13 @@ func _apply_random_arc() -> void:
 		rotation_speed = spd if randf() > 0.5 else -spd
 		shrink_speed   = randf_range(RAND_SHRINK_SPEED_MIN, RAND_SHRINK_SPEED_MAX)
 		blocked_arcs   = _random_arc_pattern()
+	elif drift_enabled:
+		var empty_arcs: Array[Vector2] = []
+		blocked_arcs = empty_arcs
+		rotation_speed = (randf_range(RAND_PULSE_SPEED_MIN, RAND_PULSE_SPEED_MAX)
+				* (1.0 if randf() > 0.5 else -1.0))
+		drift_speed = randf_range(RAND_DRIFT_SPEED_MIN, RAND_DRIFT_SPEED_MAX)
+		_apply_random_pulse_timing()
 	elif mirror_mode:
 		rotation_speed = (randf_range(RAND_MIRROR_SPEED_MIN, RAND_MIRROR_SPEED_MAX)
 				* (1.0 if randf() > 0.5 else -1.0))
@@ -341,6 +407,34 @@ func _apply_random_chaser_config() -> void:
 	var c: Array = configs[randi() % configs.size()]
 	orbiter_count             = c[0]
 	orbiter_base_radius_mult  = c[1]
+
+
+func _draw_spike_walls() -> void:
+	# Paredes em world space x=DRIFT_WALL_LEFT e x=DRIFT_WALL_RIGHT.
+	# Como _draw() usa coordenadas locais, subtrai a posição do nó.
+	_draw_spike_column(DRIFT_WALL_LEFT  - position.x, true)
+	_draw_spike_column(DRIFT_WALL_RIGHT - position.x, false)
+
+
+func _draw_spike_column(local_x: float, pointing_right: bool) -> void:
+	var color    := Color(0.85, 0.15, 0.1, 0.8)
+	var bg_color := Color(0.45, 0.06, 0.06, 0.45)
+	var spike_w  := 15.0
+	var spacing  := 22.0
+	var y_top    := -520.0
+	var y_bot    := 520.0
+	var tip_x    := local_x + (spike_w if pointing_right else -spike_w)
+	# Fundo da parede
+	draw_line(Vector2(local_x, y_top), Vector2(local_x, y_bot), bg_color, 6.0)
+	# Zig-zag de spikes apontando para o centro
+	var pts := PackedVector2Array()
+	var y   := y_top
+	while y <= y_bot:
+		pts.append(Vector2(local_x, y))
+		pts.append(Vector2(tip_x,   y + spacing * 0.5))
+		y += spacing
+	pts.append(Vector2(local_x, y_bot))
+	draw_polyline(pts, color, 2.5, true)
 
 
 func _random_arc_pattern() -> Array[Vector2]:

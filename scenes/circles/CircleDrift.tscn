@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_drift"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo deslizante.
+; Ao pousar, começa a derivar para esquerda ou direita (aleatório).
+; Spikes nas laterais da tela (x=40 e x=350) — se tocar, o player morre.
+; Combina pressão de pulso (ativo/inativo) com urgência de movimento lateral.
+
+[node name="CircleDrift" instance=ExtResource("1_base")]
+rotation_speed = 50.0
+circle_radius = 62.0
+blocked_arcs = Array[Vector2]([])
+pulse_enabled = true
+pulse_active_duration = 1.5
+pulse_inactive_duration = 0.9
+drift_enabled = true
+drift_speed = 40.0

@@ -16,6 +16,8 @@ const VIEWPORT_H     := 844.0
 const VIEWPORT_W     := 390.0
 const CAM_POS_SMOOTH := 6.0
 const CAM_ZOOM_SMOOTH := 3.5
+const DRIFT_WALL_LEFT  := 40.0
+const DRIFT_WALL_RIGHT := 350.0
 
 
 # Câmera — estado interpolado
@@ -44,6 +46,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_update_camera(delta)
+	_follow_drift_circle()
 
 
 # ─── Câmera ──────────────────────────────────────────────────────────────────
@@ -87,6 +90,24 @@ func _target_pos(zoom: float) -> Vector2:
 	return Vector2(tx, ty)
 
 
+# ─── Drift: player segue o círculo ──────────────────────────────────────────
+
+func _follow_drift_circle() -> void:
+	var needs_redraw := false
+	if player.state == player.State.ON_CIRCLE:
+		var cur := circles[current_index]
+		if cur.get("drift_enabled") and cur.get("_drifting"):
+			player.global_position = cur.global_position
+			needs_redraw = true
+	if not needs_redraw:
+		for c in circles:
+			if c.get("_drift_returning"):
+				needs_redraw = true
+				break
+	if needs_redraw:
+		queue_redraw()
+
+
 # ─── Desenho ─────────────────────────────────────────────────────────────────
 
 func _draw() -> void:
@@ -97,6 +118,50 @@ func _draw() -> void:
 			Color(0.65, 0.65, 0.65, 0.3),
 			1.5
 		)
+	_draw_spike_walls()
+
+
+func _draw_spike_walls() -> void:
+	var cam_y_half := (VIEWPORT_H * 0.5) / _cam_zoom
+	var y_top := _cam_pos.y - cam_y_half
+	var y_bot := _cam_pos.y + cam_y_half
+	# Only draw when a drift circle is nearby
+	var drift_visible := false
+	for c in circles:
+		if c.get("drift_enabled"):
+			var cy: float = c.position.y
+			if cy >= y_top - 600.0 and cy <= y_bot + 600.0:
+				drift_visible = true
+				break
+	if not drift_visible:
+		return
+	var cam_x_half   := (VIEWPORT_W * 0.5) / _cam_zoom
+	var screen_left  := _cam_pos.x - cam_x_half
+	var screen_right := _cam_pos.x + cam_x_half
+	var bg    := Color(0.45, 0.06, 0.06, 0.55)
+	var spike := Color(0.9,  0.15, 0.1,  0.9)
+	var depth := 16.0
+	var step  := 24.0
+	# ── Left zone: screen edge → wall ──────────────────────────────────────
+	if screen_left < DRIFT_WALL_LEFT:
+		draw_rect(Rect2(screen_left, y_top, DRIFT_WALL_LEFT - screen_left, y_bot - y_top), bg)
+		var pts_l := PackedVector2Array()
+		var yl    := y_top
+		while yl <= y_bot + step:
+			pts_l.append(Vector2(DRIFT_WALL_LEFT, yl))
+			pts_l.append(Vector2(DRIFT_WALL_LEFT + depth, yl + step * 0.5))
+			yl += step
+		draw_polyline(pts_l, spike, 2.0, true)
+	# ── Right zone: wall → screen edge ─────────────────────────────────────
+	if screen_right > DRIFT_WALL_RIGHT:
+		draw_rect(Rect2(DRIFT_WALL_RIGHT, y_top, screen_right - DRIFT_WALL_RIGHT, y_bot - y_top), bg)
+		var pts_r := PackedVector2Array()
+		var yr    := y_top
+		while yr <= y_bot + step:
+			pts_r.append(Vector2(DRIFT_WALL_RIGHT, yr))
+			pts_r.append(Vector2(DRIFT_WALL_RIGHT - depth, yr + step * 0.5))
+			yr += step
+		draw_polyline(pts_r, spike, 2.0, true)
 
 
 # ─── Input ───────────────────────────────────────────────────────────────────
@@ -121,6 +186,9 @@ func _jump_to_next() -> void:
 	if cur.get("shrink_enabled"):
 		cur.call("stop_shrinking")
 		_disconnect_shrink(cur)
+	if cur.get("drift_enabled"):
+		cur.call("stop_drifting")
+		_disconnect_drift(cur)
 	var next_idx := (current_index + 1) % circles.size()
 	player.move_to(circles[next_idx])
 
@@ -139,6 +207,10 @@ func _on_player_landed(circle: Node2D) -> void:
 		circle.call("start_shrinking")
 		if not circle.is_connected("shrink_exploded", _on_shrink_exploded):
 			circle.connect("shrink_exploded", _on_shrink_exploded)
+	if circle.get("drift_enabled"):
+		circle.call("start_drifting")
+		if not circle.is_connected("drift_exploded", _on_drift_exploded):
+			circle.connect("drift_exploded", _on_drift_exploded)
 	if circle.get("bg_number") > 0:
 		last_checkpoint_index = current_index
 
@@ -152,6 +224,15 @@ func _disconnect_shrink(circle: Node2D) -> void:
 		circle.disconnect("shrink_exploded", _on_shrink_exploded)
 
 
+func _on_drift_exploded() -> void:
+	player.force_die("drift")
+
+
+func _disconnect_drift(circle: Node2D) -> void:
+	if circle.is_connected("drift_exploded", _on_drift_exploded):
+		circle.disconnect("drift_exploded", _on_drift_exploded)
+
+
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
 	var cur := circles[current_index]
@@ -160,6 +241,9 @@ func _on_player_died(reason: String) -> void:
 	if cur.get("shrink_enabled"):
 		cur.call("stop_shrinking")
 		_disconnect_shrink(cur)
+	if cur.get("drift_enabled"):
+		cur.call("stop_drifting")
+		_disconnect_drift(cur)
 	lives -= 1
 	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
@@ -180,3 +264,5 @@ func _reset_circles_after_checkpoint() -> void:
 			c.call("reset_mirror")
 		if c.get("shrink_enabled"):
 			c.call("stop_shrinking")
+		if c.get("drift_enabled"):
+			c.call("stop_drifting")
