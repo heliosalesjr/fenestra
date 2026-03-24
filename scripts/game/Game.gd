@@ -2,22 +2,22 @@ extends Node2D
 
 @export var circle_sequence: Array[NodePath] = []
 
-@onready var player: Node2D  = $Player
-@onready var _camera: Camera2D = $Camera2D
-@onready var _ui: Control = $UI/TopBar
+@onready var player: Node2D       = $Player
+@onready var _camera: Camera2D    = $Camera2D
+@onready var _ui: Control         = $UI/TopBar
+@onready var _spike_walls: Node2D = $SpikeLayer/SpikeWalls
 
 var circles: Array[Node2D] = []
 var current_index: int = 0
 var last_checkpoint_index: int = 0
 var lives: int = 99
+var _first_drift_index: int = -1
 
 const RESPAWN_DELAY  := 1.0
 const VIEWPORT_H     := 844.0
 const VIEWPORT_W     := 390.0
 const CAM_POS_SMOOTH := 6.0
 const CAM_ZOOM_SMOOTH := 3.5
-const DRIFT_WALL_LEFT  := 40.0
-const DRIFT_WALL_RIGHT := 350.0
 
 
 # Câmera — estado interpolado
@@ -28,6 +28,11 @@ var _cam_zoom: float   = 1.0
 func _ready() -> void:
 	for path in circle_sequence:
 		circles.append(get_node(path))
+
+	for i in circles.size():
+		if circles[i].get("drift_enabled"):
+			_first_drift_index = i
+			break
 
 	player.player_died.connect(_on_player_died)
 	player.landed_on.connect(_on_player_landed)
@@ -99,6 +104,14 @@ func _follow_drift_circle() -> void:
 		if cur.get("drift_enabled") and cur.get("_drifting"):
 			player.global_position = cur.global_position
 			needs_redraw = true
+			# Colisão com as bordas reais da tela (compensa zoom da câmera)
+			var radius: float    = cur.get("circle_radius")
+			var half_w: float    = (VIEWPORT_W * 0.5) / _cam_zoom
+			var wall_left: float  = _cam_pos.x - half_w
+			var wall_right: float = _cam_pos.x + half_w
+			if cur.position.x - radius <= wall_left or \
+			   cur.position.x + radius >= wall_right:
+				cur.call("trigger_drift_explode")
 	if not needs_redraw:
 		for c in circles:
 			if c.get("_drift_returning"):
@@ -118,50 +131,6 @@ func _draw() -> void:
 			Color(0.65, 0.65, 0.65, 0.3),
 			1.5
 		)
-	_draw_spike_walls()
-
-
-func _draw_spike_walls() -> void:
-	var cam_y_half := (VIEWPORT_H * 0.5) / _cam_zoom
-	var y_top := _cam_pos.y - cam_y_half
-	var y_bot := _cam_pos.y + cam_y_half
-	# Only draw when a drift circle is nearby
-	var drift_visible := false
-	for c in circles:
-		if c.get("drift_enabled"):
-			var cy: float = c.position.y
-			if cy >= y_top - 600.0 and cy <= y_bot + 600.0:
-				drift_visible = true
-				break
-	if not drift_visible:
-		return
-	var cam_x_half   := (VIEWPORT_W * 0.5) / _cam_zoom
-	var screen_left  := _cam_pos.x - cam_x_half
-	var screen_right := _cam_pos.x + cam_x_half
-	var bg    := Color(0.45, 0.06, 0.06, 0.55)
-	var spike := Color(0.9,  0.15, 0.1,  0.9)
-	var depth := 16.0
-	var step  := 24.0
-	# ── Left zone: screen edge → wall ──────────────────────────────────────
-	if screen_left < DRIFT_WALL_LEFT:
-		draw_rect(Rect2(screen_left, y_top, DRIFT_WALL_LEFT - screen_left, y_bot - y_top), bg)
-		var pts_l := PackedVector2Array()
-		var yl    := y_top
-		while yl <= y_bot + step:
-			pts_l.append(Vector2(DRIFT_WALL_LEFT, yl))
-			pts_l.append(Vector2(DRIFT_WALL_LEFT + depth, yl + step * 0.5))
-			yl += step
-		draw_polyline(pts_l, spike, 2.0, true)
-	# ── Right zone: wall → screen edge ─────────────────────────────────────
-	if screen_right > DRIFT_WALL_RIGHT:
-		draw_rect(Rect2(DRIFT_WALL_RIGHT, y_top, screen_right - DRIFT_WALL_RIGHT, y_bot - y_top), bg)
-		var pts_r := PackedVector2Array()
-		var yr    := y_top
-		while yr <= y_bot + step:
-			pts_r.append(Vector2(DRIFT_WALL_RIGHT, yr))
-			pts_r.append(Vector2(DRIFT_WALL_RIGHT - depth, yr + step * 0.5))
-			yr += step
-		draw_polyline(pts_r, spike, 2.0, true)
 
 
 # ─── Input ───────────────────────────────────────────────────────────────────
@@ -197,6 +166,7 @@ func _jump_to_next() -> void:
 
 func _on_player_landed(circle: Node2D) -> void:
 	current_index = circles.find(circle)
+	_spike_walls.visible = (_first_drift_index >= 0 and current_index >= _first_drift_index)
 	if circle.get("mirror_mode"):
 		circle.call("flip_mirror")
 	if circle.get("orbiter_chaser"):
@@ -251,6 +221,7 @@ func _on_player_died(reason: String) -> void:
 		_ui.show_game_over()
 		return
 	current_index = last_checkpoint_index
+	_spike_walls.visible = (_first_drift_index >= 0 and current_index >= _first_drift_index)
 	_reset_circles_after_checkpoint()
 	player.respawn(circles[last_checkpoint_index])
 

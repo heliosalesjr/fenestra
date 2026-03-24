@@ -90,8 +90,8 @@ const RAND_SHRINK_RADIUS_MIN := 65.0
 const RAND_SHRINK_RADIUS_MAX := 88.0
 const RAND_SHRINK_SPEED_MIN  := 8.0    # px/s
 const RAND_SHRINK_SPEED_MAX  := 16.0   # px/s
-const DRIFT_WALL_LEFT        := 40.0   # x mínimo (spike esquerda) em world space
-const DRIFT_WALL_RIGHT       := 350.0  # x máximo (spike direita) em world space
+const DRIFT_WALL_LEFT        := 0.0    # x mínimo (borda esquerda da tela) em world space
+const DRIFT_WALL_RIGHT       := 390.0  # x máximo (borda direita da tela) em world space
 const RAND_DRIFT_SPEED_MIN   := 25.0   # px/s
 const RAND_DRIFT_SPEED_MAX   := 50.0   # px/s
 
@@ -175,10 +175,6 @@ func _process(delta: float) -> void:
 	if _drifting:
 		position.x += _drift_direction * drift_speed * delta
 		queue_redraw()
-		if position.x - circle_radius <= DRIFT_WALL_LEFT or \
-		   position.x + circle_radius >= DRIFT_WALL_RIGHT:
-			_drifting = false
-			drift_exploded.emit()
 
 	if _drift_returning:
 		queue_redraw()
@@ -238,6 +234,12 @@ func stop_shrinking() -> void:
 	_shrink_radius = circle_radius
 	arc_visual.circle_radius = circle_radius
 	arc_visual.queue_redraw()
+
+
+## Dispara a explosão de deriva (chamado pelo Game quando a borda da tela é atingida).
+func trigger_drift_explode() -> void:
+	_drifting = false
+	drift_exploded.emit()
 
 
 ## Inicia a deriva horizontal. Direção (esq/dir) é sorteada aleatoriamente.

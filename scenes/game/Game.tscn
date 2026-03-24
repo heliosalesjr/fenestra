@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://fenestra_game"]
+[gd_scene load_steps=13 format=3 uid="uid://fenestra_game"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn"        id="2_arc"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleMirror.tscn"      id="9_mirror"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleShrink.tscn"      id="10_shrink"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleDrift.tscn"       id="11_drift"]
+[ext_resource type="Script"      path="res://scripts/game/SpikeWalls.gd"            id="12_spikewalls"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
@@ -165,6 +166,15 @@ level_randomize = true
 position = Vector2(195, -11700)
 circle_radius = 72.0
 bg_number = 8
+
+; ── SPIKE WALLS (CanvasLayer — screen space, fixo) ───────────────────────────
+
+[node name="SpikeLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="SpikeWalls" type="Node2D" parent="SpikeLayer"]
+visible = false
+script = ExtResource("12_spikewalls")
 
 ; ── PLAYER ───────────────────────────────────────────────────────────────────
 
