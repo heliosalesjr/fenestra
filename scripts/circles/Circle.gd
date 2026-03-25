@@ -8,6 +8,7 @@ signal landing_failed(reason: String)
 signal shrink_exploded()
 signal drift_exploded()
 signal grow_exploded()
+signal poison_exploded()
 
 ## Razão do último pouso inválido — lida pelo Player após is_landing_valid() retornar false.
 var last_fail_reason: String = ""
@@ -85,6 +86,29 @@ var _grow_radius: float = 0.0
 var _grow_returning: bool = false
 var _grow_tween: Tween = null
 
+## Quando true, um feixe rotativo independente percorre a borda do círculo.
+## Bloqueia pouso e saída enquanto o feixe aponta na direção do player.
+@export var laser_enabled: bool = false
+@export var laser_speed: float = 120.0   # graus/s (positivo = horário)
+@export var laser_width: float = 25.0    # largura angular do feixe em graus
+var _laser_angle: float = 0.0
+
+## Quando true, ao pousar uma zona venenosa aparece e cresce progressivamente.
+## Bloqueia saída enquanto cobre a direção de escape. Ao cobrir 360°, o player morre.
+@export var poison_enabled: bool = false
+@export var poison_speed: float = 30.0   # graus/s de expansão
+var _poisoning: bool = false
+var _poison_start: float = 0.0   # ângulo de início (world space, graus)
+var _poison_angle: float = 0.0   # largura atual em graus
+
+## Quando true, exibe dois anéis concêntricos girando de forma independente.
+## O player só consegue pousar/sair quando as janelas abertas de AMBOS os anéis estão alinhadas.
+@export var dual_enabled: bool = false
+@export var rotation_speed_b: float = -85.0  # graus/s do anel externo
+@export var blocked_arcs_b: Array[Vector2] = [Vector2(200, 320)]
+var _rotation_root_b: Node2D = null
+var _arc_visual_b: Node2D = null
+
 ## Quando true, raio, velocidade/direção e padrão de arcos são randomizados no _ready().
 @export var level_randomize: bool = false
 
@@ -106,6 +130,13 @@ const RAND_DRIFT_SPEED_MIN   := 25.0   # px/s
 const RAND_DRIFT_SPEED_MAX   := 50.0   # px/s
 const RAND_GROW_SPEED_MIN    := 8.0    # px/s
 const RAND_GROW_SPEED_MAX    := 18.0   # px/s
+const RAND_LASER_SPEED_MIN   := 80.0   # °/s
+const RAND_LASER_SPEED_MAX   := 180.0  # °/s
+const RAND_POISON_SPEED_MIN  := 20.0   # °/s
+const RAND_POISON_SPEED_MAX  := 50.0   # °/s
+const DUAL_RING_OFFSET       := 18.0   # px — anel B desenhado além do anel A
+const RAND_DUAL_SPEED_MIN    := 28.0   # °/s — mais lento para dar tempo de ler os dois anéis
+const RAND_DUAL_SPEED_MAX    := 60.0   # °/s
 
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
@@ -149,6 +180,33 @@ func _draw() -> void:
 			# Começa no topo (−PI/2) e drena no sentido horário
 			draw_arc(Vector2.ZERO, ring_r, -PI * 0.5, -PI * 0.5 + span, pts, color, PULSE_RING_WIDTH)
 
+	if _poisoning and _poison_angle > 0.0:
+		var r := circle_radius + 4.0
+		var start_rad := deg_to_rad(_poison_start)
+		var end_rad   := deg_to_rad(_poison_start + _poison_angle)
+		var segs: int = max(4, int(_poison_angle / 4.0))
+		var pts := PackedVector2Array()
+		pts.append(Vector2.ZERO)
+		for i in range(segs + 1):
+			var a: float = start_rad + float(i) / float(segs) * (end_rad - start_rad)
+			pts.append(Vector2(cos(a), sin(a)) * r)
+		draw_colored_polygon(pts, Color(0.15, 0.85, 0.2, 0.35))
+		draw_arc(Vector2.ZERO, r, start_rad, end_rad, segs, Color(0.25, 1.0, 0.15, 0.8), 2.5)
+
+	if laser_enabled:
+		var r := circle_radius + 4.0
+		var laser_rad := deg_to_rad(_laser_angle)
+		var half_w := deg_to_rad(laser_width * 0.5)
+		var segments := 10
+		var pts := PackedVector2Array()
+		pts.append(Vector2.ZERO)
+		for i in range(segments + 1):
+			var a: float = laser_rad - half_w + float(i) / float(segments) * half_w * 2.0
+			pts.append(Vector2(cos(a), sin(a)) * r)
+		draw_colored_polygon(pts, Color(1.0, 0.2, 0.05, 0.4))
+		draw_line(Vector2.ZERO, Vector2(cos(laser_rad), sin(laser_rad)) * r,
+				Color(1.0, 0.45, 0.1, 0.95), 2.5)
+
 
 func _ready() -> void:
 	if not Engine.is_editor_hint() and level_randomize:
@@ -158,6 +216,16 @@ func _ready() -> void:
 	_sync_collision_shape()
 	_shrink_radius = circle_radius
 	_original_position = position
+	if not Engine.is_editor_hint() and laser_enabled:
+		_laser_angle = randf() * 360.0
+	if not Engine.is_editor_hint() and dual_enabled:
+		var root_b := rotation_root.duplicate()
+		add_child(root_b)
+		_rotation_root_b = root_b
+		_arc_visual_b = _rotation_root_b.get_node("ArcVisual")
+		_arc_visual_b.circle_radius = circle_radius + DUAL_RING_OFFSET
+		_arc_visual_b.blocked_arcs  = blocked_arcs_b
+		_arc_visual_b.queue_redraw()
 	if not Engine.is_editor_hint() and orbiter_count > 0:
 		_spawn_orbiters()
 
@@ -200,6 +268,20 @@ func _process(delta: float) -> void:
 	if _grow_returning:
 		arc_visual.queue_redraw()
 		queue_redraw()
+
+	if laser_enabled:
+		_laser_angle += laser_speed * delta
+		queue_redraw()
+
+	if dual_enabled and _rotation_root_b:
+		_rotation_root_b.rotation_degrees += rotation_speed_b * delta
+
+	if _poisoning:
+		_poison_angle += poison_speed * delta
+		queue_redraw()
+		if _poison_angle >= 360.0:
+			_poisoning = false
+			poison_exploded.emit()
 
 
 # ---------------------------------------------------------------------------
@@ -301,6 +383,22 @@ func trigger_grow_explode() -> void:
 	grow_exploded.emit()
 
 
+## Inicia o envenenamento do círculo. A zona cresce a partir de um ângulo aleatório.
+func start_poisoning() -> void:
+	if not poison_enabled:
+		return
+	_poison_start = randf() * 360.0
+	_poison_angle = 0.0
+	_poisoning = true
+
+
+## Para o envenenamento e limpa a zona venenosa.
+func stop_poisoning() -> void:
+	_poisoning = false
+	_poison_angle = 0.0
+	queue_redraw()
+
+
 ## Inicia a deriva horizontal. Direção (esq/dir) é sorteada aleatoriamente.
 ## Chamado pelo Game ao pousar num círculo com drift_enabled = true.
 func start_drifting() -> void:
@@ -372,6 +470,15 @@ func reset_mirror() -> void:
 func can_exit(world_angle_deg: float) -> bool:
 	if not is_active:
 		return false
+	if _angle_in_poison(world_angle_deg):
+		return false
+	if _angle_in_laser(world_angle_deg):
+		return false
+	if dual_enabled and _rotation_root_b:
+		var local_b := _world_to_local_angle_b(world_angle_deg)
+		for arc in blocked_arcs_b:
+			if _angle_in_arc(local_b, arc.x, arc.y):
+				return false
 	var local_angle := _world_to_local_angle(world_angle_deg)
 	var in_arc := false
 	for arc in blocked_arcs:
@@ -404,6 +511,19 @@ func is_landing_valid(world_angle_deg: float) -> bool:
 		landing_failed.emit("blocked")
 		return false
 
+	if _angle_in_laser(world_angle_deg):
+		last_fail_reason = "laser"
+		landing_failed.emit("laser")
+		return false
+
+	if dual_enabled and _rotation_root_b:
+		var local_b := _world_to_local_angle_b(world_angle_deg)
+		for arc in blocked_arcs_b:
+			if _angle_in_arc(local_b, arc.x, arc.y):
+				last_fail_reason = "blocked"
+				landing_failed.emit("blocked")
+				return false
+
 	last_fail_reason = ""
 	return true
 
@@ -430,6 +550,27 @@ func _apply_random_arc() -> void:
 		rotation_speed = spd if randf() > 0.5 else -spd
 		grow_speed     = randf_range(RAND_GROW_SPEED_MIN, RAND_GROW_SPEED_MAX)
 		blocked_arcs   = _random_arc_pattern()
+	elif laser_enabled:
+		circle_radius  = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+		var spd := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed = spd if randf() > 0.5 else -spd
+		var lspd := randf_range(RAND_LASER_SPEED_MIN, RAND_LASER_SPEED_MAX)
+		laser_speed    = lspd if randf() > 0.5 else -lspd
+		blocked_arcs   = _random_arc_pattern()
+	elif poison_enabled:
+		circle_radius  = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+		var spd := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed = spd if randf() > 0.5 else -spd
+		poison_speed   = randf_range(RAND_POISON_SPEED_MIN, RAND_POISON_SPEED_MAX)
+		blocked_arcs   = _random_arc_pattern()
+	elif dual_enabled:
+		circle_radius    = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+		var spd_a := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed   = spd_a if randf() > 0.5 else -spd_a
+		var spd_b := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed_b = spd_b if randf() > 0.5 else -spd_b
+		blocked_arcs     = _random_arc_pattern_dual()
+		blocked_arcs_b   = _random_arc_pattern_dual()
 	elif drift_enabled:
 		var empty_arcs: Array[Vector2] = []
 		blocked_arcs = empty_arcs
@@ -514,6 +655,18 @@ func _random_arc_pattern() -> Array[Vector2]:
 	return patterns[randi() % patterns.size()]
 
 
+## Padrões simplificados para dupla rotação: um único arco bloqueado por anel,
+## bloqueando no máximo ~100° para deixar uma janela ampla de ~260°.
+func _random_arc_pattern_dual() -> Array[Vector2]:
+	var p0: Array[Vector2] = [Vector2(40,  130)]  # bloqueia 90°
+	var p1: Array[Vector2] = [Vector2(20,  120)]  # bloqueia 100°
+	var p2: Array[Vector2] = [Vector2(210, 300)]  # bloqueia 90°
+	var p3: Array[Vector2] = [Vector2(150, 250)]  # bloqueia 100°
+	var p4: Array[Vector2] = [Vector2(80,  175)]  # bloqueia 95°
+	var patterns: Array    = [p0, p1, p2, p3, p4]
+	return patterns[randi() % patterns.size()]
+
+
 # ---------------------------------------------------------------------------
 # Helpers internos
 # ---------------------------------------------------------------------------
@@ -523,6 +676,35 @@ func _world_to_local_angle(world_angle_deg: float) -> float:
 	if local < 0.0:
 		local += 360.0
 	return local
+
+
+func _world_to_local_angle_b(world_angle_deg: float) -> float:
+	var local := fmod(world_angle_deg - _rotation_root_b.rotation_degrees, 360.0)
+	if local < 0.0:
+		local += 360.0
+	return local
+
+
+## Retorna true se world_angle_deg está dentro da zona de veneno atual.
+func _angle_in_poison(world_angle_deg: float) -> bool:
+	if not _poisoning or _poison_angle <= 0.0:
+		return false
+	var norm_world := fmod(world_angle_deg, 360.0)
+	if norm_world < 0.0:
+		norm_world += 360.0
+	var norm_start := fmod(_poison_start, 360.0)
+	var norm_end   := fmod(_poison_start + _poison_angle, 360.0)
+	return _angle_in_arc(norm_world, norm_start, norm_end)
+
+
+## Retorna true se world_angle_deg está dentro da zona do laser rotativo.
+func _angle_in_laser(world_angle_deg: float) -> bool:
+	if not laser_enabled:
+		return false
+	var diff := fmod(absf(world_angle_deg - _laser_angle), 360.0)
+	if diff > 180.0:
+		diff = 360.0 - diff
+	return diff <= laser_width * 0.5
 
 
 ## Retorna true se angle está dentro do arco [start, end] (ambos em graus).
@@ -541,6 +723,9 @@ func _sync_arc_visual() -> void:
 	arc_visual.blocked_arcs   = blocked_arcs
 	arc_visual.mirror_flipped = _mirror_flipped
 	arc_visual.queue_redraw()
+	if _arc_visual_b:
+		_arc_visual_b.circle_radius = circle_radius + DUAL_RING_OFFSET
+		_arc_visual_b.queue_redraw()
 
 
 func _sync_active_state() -> void:

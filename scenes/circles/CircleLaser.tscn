@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_laser"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo com laser rotativo.
+; Um feixe gira continuamente, independente da rotação dos arcos.
+; O player deve saltar quando o laser NÃO aponta para a direção de saída/chegada.
+; Combina leitura de arco (padrão nível 1) com timing do laser.
+
+[node name="CircleLaser" instance=ExtResource("1_base")]
+rotation_speed = 80.0
+circle_radius = 68.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+laser_enabled = true
+laser_speed = 120.0
+laser_width = 25.0
+level_randomize = true

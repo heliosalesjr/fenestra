@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_poison"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo envenenado.
+; Ao pousar, uma zona verde tóxica começa a crescer a partir de um ponto aleatório.
+; O player deve sair antes que o veneno cubra a direção de escape.
+; Se cobrir 360°, o player morre.
+
+[node name="CirclePoison" instance=ExtResource("1_base")]
+rotation_speed = 75.0
+circle_radius = 68.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+poison_enabled = true
+poison_speed = 30.0
+level_randomize = true

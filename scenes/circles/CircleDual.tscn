@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_dual"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo de dupla rotação.
+; Dois anéis concêntricos giram independentemente com velocidades/direções próprias.
+; O player só consegue pousar ou sair quando as janelas abertas de AMBOS os anéis
+; estão simultaneamente alinhadas com a direção de viagem.
+
+[node name="CircleDual" instance=ExtResource("1_base")]
+rotation_speed = 60.0
+circle_radius = 65.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+dual_enabled = true
+rotation_speed_b = -85.0
+blocked_arcs_b = Array[Vector2]([Vector2(200, 320)])
+level_randomize = true

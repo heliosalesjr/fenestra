@@ -177,6 +177,9 @@ func _jump_to_next() -> void:
 	if cur.get("grow_enabled"):
 		cur.call("stop_growing")
 		_disconnect_grow(cur)
+	if cur.get("poison_enabled"):
+		cur.call("stop_poisoning")
+		_disconnect_poison(cur)
 	var next_idx := (current_index + 1) % circles.size()
 	player.move_to(circles[next_idx])
 
@@ -185,7 +188,7 @@ func _jump_to_next() -> void:
 
 func _on_player_landed(circle: Node2D) -> void:
 	current_index = circles.find(circle)
-	_spike_walls.visible = (_first_walls_index >= 0 and current_index >= _first_walls_index)
+	_spike_walls.visible = circle.get("drift_enabled") or circle.get("grow_enabled")
 	if circle.get("mirror_mode"):
 		circle.call("flip_mirror")
 	if circle.get("orbiter_chaser"):
@@ -204,6 +207,10 @@ func _on_player_landed(circle: Node2D) -> void:
 		circle.call("start_growing")
 		if not circle.is_connected("grow_exploded", _on_grow_exploded):
 			circle.connect("grow_exploded", _on_grow_exploded)
+	if circle.get("poison_enabled"):
+		circle.call("start_poisoning")
+		if not circle.is_connected("poison_exploded", _on_poison_exploded):
+			circle.connect("poison_exploded", _on_poison_exploded)
 	if circle.get("bg_number") > 0:
 		last_checkpoint_index = current_index
 
@@ -235,6 +242,15 @@ func _disconnect_grow(circle: Node2D) -> void:
 		circle.disconnect("grow_exploded", _on_grow_exploded)
 
 
+func _on_poison_exploded() -> void:
+	player.force_die("poison")
+
+
+func _disconnect_poison(circle: Node2D) -> void:
+	if circle.is_connected("poison_exploded", _on_poison_exploded):
+		circle.disconnect("poison_exploded", _on_poison_exploded)
+
+
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
 	var cur := circles[current_index]
@@ -249,6 +265,9 @@ func _on_player_died(reason: String) -> void:
 	if cur.get("grow_enabled"):
 		cur.call("stop_growing")
 		_disconnect_grow(cur)
+	if cur.get("poison_enabled"):
+		cur.call("stop_poisoning")
+		_disconnect_poison(cur)
 	lives -= 1
 	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
@@ -256,7 +275,8 @@ func _on_player_died(reason: String) -> void:
 		_ui.show_game_over()
 		return
 	current_index = last_checkpoint_index
-	_spike_walls.visible = (_first_walls_index >= 0 and current_index >= _first_walls_index)
+	var cp_circle := circles[last_checkpoint_index]
+	_spike_walls.visible = cp_circle.get("drift_enabled") or cp_circle.get("grow_enabled")
 	_reset_circles_after_checkpoint()
 	player.respawn(circles[last_checkpoint_index])
 
@@ -274,3 +294,5 @@ func _reset_circles_after_checkpoint() -> void:
 			c.call("stop_drifting")
 		if c.get("grow_enabled"):
 			c.call("stop_growing")
+		if c.get("poison_enabled"):
+			c.call("stop_poisoning")

@@ -102,7 +102,54 @@ func _arc_is_blocked(circle: Node2D, world_dir: Vector2) -> bool:
 				break
 
 	var mirror_flipped: bool = circle.get("_mirror_flipped")
-	return in_arc != mirror_flipped
+	if in_arc != mirror_flipped:
+		return true
+
+	# Laser check (independent of arc/mirror logic)
+	if circle.get("laser_enabled"):
+		var laser_angle: float = circle.get("_laser_angle")
+		var laser_width: float = circle.get("laser_width")
+		var diff := fmod(absf(world_angle_deg - laser_angle), 360.0)
+		if diff > 180.0:
+			diff = 360.0 - diff
+		if diff <= laser_width * 0.5:
+			return true
+
+	# Ring B check (dual rotation)
+	var rot_b := circle.get("_rotation_root_b") as Node2D
+	if rot_b:
+		var arcs_b: Array = circle.get("blocked_arcs_b")
+		var local_b := fmod(world_angle_deg - rot_b.rotation_degrees, 360.0)
+		if local_b < 0.0:
+			local_b += 360.0
+		for arc in arcs_b:
+			var s: float = (arc as Vector2).x
+			var e: float = (arc as Vector2).y
+			if s <= e:
+				if local_b >= s and local_b <= e:
+					return true
+			else:
+				if local_b >= s or local_b <= e:
+					return true
+
+	# Poison check
+	if circle.get("_poisoning"):
+		var poison_start: float = circle.get("_poison_start")
+		var poison_angle: float = circle.get("_poison_angle")
+		var norm_world := fmod(world_angle_deg, 360.0)
+		if norm_world < 0.0:
+			norm_world += 360.0
+		var norm_start := fmod(poison_start, 360.0)
+		var norm_end   := fmod(poison_start + poison_angle, 360.0)
+		var in_poison := false
+		if norm_start <= norm_end:
+			in_poison = norm_world >= norm_start and norm_world <= norm_end
+		else:
+			in_poison = norm_world >= norm_start or norm_world <= norm_end
+		if in_poison:
+			return true
+
+	return false
 
 
 ## Verifica colisão com chasers enquanto o player está parado no círculo.
