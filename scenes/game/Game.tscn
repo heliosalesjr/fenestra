@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://fenestra_game"]
+[gd_scene load_steps=14 format=3 uid="uid://fenestra_game"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn"        id="2_arc"]
@@ -12,10 +12,11 @@
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleShrink.tscn"      id="10_shrink"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleDrift.tscn"       id="11_drift"]
 [ext_resource type="Script"      path="res://scripts/game/SpikeWalls.gd"            id="12_spikewalls"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleGrow.tscn"        id="13_grow"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
-circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7")]
+circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8")]
 
 ; ── CÂMERA (controlada por Game.gd) ─────────────────────────────────────────
 
@@ -166,6 +167,25 @@ level_randomize = true
 position = Vector2(195, -11700)
 circle_radius = 72.0
 bg_number = 8
+
+; ── NÍVEL 8 — INFLADOR ────────────────────────────────────────────────────────
+
+[node name="GrowA" parent="." instance=ExtResource("13_grow")]
+position = Vector2(155, -12150)
+level_randomize = true
+
+[node name="GrowB" parent="." instance=ExtResource("13_grow")]
+position = Vector2(235, -12600)
+level_randomize = true
+
+[node name="GrowC" parent="." instance=ExtResource("13_grow")]
+position = Vector2(160, -13050)
+level_randomize = true
+
+[node name="CP8" parent="." instance=ExtResource("1_checkpoint")]
+position = Vector2(195, -13500)
+circle_radius = 72.0
+bg_number = 9
 
 ; ── SPIKE WALLS (CanvasLayer — screen space, fixo) ───────────────────────────
 

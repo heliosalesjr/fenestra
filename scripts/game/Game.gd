@@ -11,7 +11,7 @@ var circles: Array[Node2D] = []
 var current_index: int = 0
 var last_checkpoint_index: int = 0
 var lives: int = 99
-var _first_drift_index: int = -1
+var _first_walls_index: int = -1   # primeiro círculo com drift ou grow (ativa spikes)
 
 const RESPAWN_DELAY  := 1.0
 const VIEWPORT_H     := 844.0
@@ -30,8 +30,8 @@ func _ready() -> void:
 		circles.append(get_node(path))
 
 	for i in circles.size():
-		if circles[i].get("drift_enabled"):
-			_first_drift_index = i
+		if circles[i].get("drift_enabled") or circles[i].get("grow_enabled"):
+			_first_walls_index = i
 			break
 
 	player.player_died.connect(_on_player_died)
@@ -52,6 +52,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_update_camera(delta)
 	_follow_drift_circle()
+	_check_grow_wall()
 
 
 # ─── Câmera ──────────────────────────────────────────────────────────────────
@@ -121,6 +122,21 @@ func _follow_drift_circle() -> void:
 		queue_redraw()
 
 
+func _check_grow_wall() -> void:
+	if player.state != player.State.ON_CIRCLE:
+		return
+	var cur := circles[current_index]
+	if not cur.get("grow_enabled") or not cur.get("_growing"):
+		return
+	var radius: float    = cur.get("_grow_radius")
+	var half_w: float    = (VIEWPORT_W * 0.5) / _cam_zoom
+	var wall_left: float  = _cam_pos.x - half_w
+	var wall_right: float = _cam_pos.x + half_w
+	if cur.position.x - radius <= wall_left or \
+	   cur.position.x + radius >= wall_right:
+		cur.call("trigger_grow_explode")
+
+
 # ─── Desenho ─────────────────────────────────────────────────────────────────
 
 func _draw() -> void:
@@ -158,6 +174,9 @@ func _jump_to_next() -> void:
 	if cur.get("drift_enabled"):
 		cur.call("stop_drifting")
 		_disconnect_drift(cur)
+	if cur.get("grow_enabled"):
+		cur.call("stop_growing")
+		_disconnect_grow(cur)
 	var next_idx := (current_index + 1) % circles.size()
 	player.move_to(circles[next_idx])
 
@@ -166,7 +185,7 @@ func _jump_to_next() -> void:
 
 func _on_player_landed(circle: Node2D) -> void:
 	current_index = circles.find(circle)
-	_spike_walls.visible = (_first_drift_index >= 0 and current_index >= _first_drift_index)
+	_spike_walls.visible = (_first_walls_index >= 0 and current_index >= _first_walls_index)
 	if circle.get("mirror_mode"):
 		circle.call("flip_mirror")
 	if circle.get("orbiter_chaser"):
@@ -181,6 +200,10 @@ func _on_player_landed(circle: Node2D) -> void:
 		circle.call("start_drifting")
 		if not circle.is_connected("drift_exploded", _on_drift_exploded):
 			circle.connect("drift_exploded", _on_drift_exploded)
+	if circle.get("grow_enabled"):
+		circle.call("start_growing")
+		if not circle.is_connected("grow_exploded", _on_grow_exploded):
+			circle.connect("grow_exploded", _on_grow_exploded)
 	if circle.get("bg_number") > 0:
 		last_checkpoint_index = current_index
 
@@ -203,6 +226,15 @@ func _disconnect_drift(circle: Node2D) -> void:
 		circle.disconnect("drift_exploded", _on_drift_exploded)
 
 
+func _on_grow_exploded() -> void:
+	player.force_die("grow")
+
+
+func _disconnect_grow(circle: Node2D) -> void:
+	if circle.is_connected("grow_exploded", _on_grow_exploded):
+		circle.disconnect("grow_exploded", _on_grow_exploded)
+
+
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
 	var cur := circles[current_index]
@@ -214,6 +246,9 @@ func _on_player_died(reason: String) -> void:
 	if cur.get("drift_enabled"):
 		cur.call("stop_drifting")
 		_disconnect_drift(cur)
+	if cur.get("grow_enabled"):
+		cur.call("stop_growing")
+		_disconnect_grow(cur)
 	lives -= 1
 	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
@@ -221,7 +256,7 @@ func _on_player_died(reason: String) -> void:
 		_ui.show_game_over()
 		return
 	current_index = last_checkpoint_index
-	_spike_walls.visible = (_first_drift_index >= 0 and current_index >= _first_drift_index)
+	_spike_walls.visible = (_first_walls_index >= 0 and current_index >= _first_walls_index)
 	_reset_circles_after_checkpoint()
 	player.respawn(circles[last_checkpoint_index])
 
@@ -237,3 +272,5 @@ func _reset_circles_after_checkpoint() -> void:
 			c.call("stop_shrinking")
 		if c.get("drift_enabled"):
 			c.call("stop_drifting")
+		if c.get("grow_enabled"):
+			c.call("stop_growing")

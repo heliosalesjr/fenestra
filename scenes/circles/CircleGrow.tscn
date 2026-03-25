@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_grow"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo inflador.
+; Ao pousar, o anel externo começa a crescer em direção às bordas da tela (spikes).
+; O player precisa ler o arco livre E sair antes que o círculo toque as paredes.
+; Combina a leitura de timing do nível 1 com urgência espacial crescente.
+
+[node name="CircleGrow" instance=ExtResource("1_base")]
+rotation_speed = 70.0
+circle_radius = 65.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+grow_enabled = true
+grow_speed = 12.0
+level_randomize = true

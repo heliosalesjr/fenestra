@@ -7,6 +7,7 @@ extends Node2D
 signal landing_failed(reason: String)
 signal shrink_exploded()
 signal drift_exploded()
+signal grow_exploded()
 
 ## Razão do último pouso inválido — lida pelo Player após is_landing_valid() retornar false.
 var last_fail_reason: String = ""
@@ -75,6 +76,15 @@ var _original_position: Vector2 = Vector2.ZERO
 var _drift_returning: bool = false
 var _drift_tween: Tween = null
 
+## Quando true, ao pousar o anel externo começa a crescer em direção às spikes laterais.
+## Usa os arcos bloqueados do nível 1 — o player precisa ler o arco E sair antes de inflar.
+@export var grow_enabled: bool = false
+@export var grow_speed: float = 12.0   # px/s de crescimento do raio
+var _growing: bool = false
+var _grow_radius: float = 0.0
+var _grow_returning: bool = false
+var _grow_tween: Tween = null
+
 ## Quando true, raio, velocidade/direção e padrão de arcos são randomizados no _ready().
 @export var level_randomize: bool = false
 
@@ -94,6 +104,8 @@ const DRIFT_WALL_LEFT        := 0.0    # x mínimo (borda esquerda da tela) em w
 const DRIFT_WALL_RIGHT       := 390.0  # x máximo (borda direita da tela) em world space
 const RAND_DRIFT_SPEED_MIN   := 25.0   # px/s
 const RAND_DRIFT_SPEED_MAX   := 50.0   # px/s
+const RAND_GROW_SPEED_MIN    := 8.0    # px/s
+const RAND_GROW_SPEED_MAX    := 18.0   # px/s
 
 ## Número exibido em background no centro (0 = nenhum). Usado nos círculos de checkpoint.
 @export var bg_number: int = 0:
@@ -179,6 +191,16 @@ func _process(delta: float) -> void:
 	if _drift_returning:
 		queue_redraw()
 
+	if _growing:
+		_grow_radius += grow_speed * delta
+		arc_visual.circle_radius = _grow_radius
+		arc_visual.queue_redraw()
+		queue_redraw()
+
+	if _grow_returning:
+		arc_visual.queue_redraw()
+		queue_redraw()
+
 
 # ---------------------------------------------------------------------------
 # API pública
@@ -240,6 +262,43 @@ func stop_shrinking() -> void:
 func trigger_drift_explode() -> void:
 	_drifting = false
 	drift_exploded.emit()
+
+
+## Inicia o crescimento do anel externo. Chamado pelo Game ao pousar.
+func start_growing() -> void:
+	if not grow_enabled:
+		return
+	_grow_radius = circle_radius
+	arc_visual.circle_radius = _grow_radius
+	_growing = true
+
+
+## Para o crescimento e anima o anel de volta ao raio original.
+func stop_growing() -> void:
+	_growing = false
+	if _grow_tween and _grow_tween.is_valid():
+		_grow_tween.kill()
+	if absf(arc_visual.circle_radius - circle_radius) < 2.0:
+		_grow_returning = false
+		arc_visual.circle_radius = circle_radius
+		arc_visual.queue_redraw()
+		return
+	_grow_returning = true
+	_grow_tween = create_tween()
+	_grow_tween.set_trans(Tween.TRANS_CUBIC)
+	_grow_tween.set_ease(Tween.EASE_OUT)
+	_grow_tween.tween_property(arc_visual, "circle_radius", circle_radius, 0.4)
+	_grow_tween.tween_callback(func():
+		_grow_returning = false
+		arc_visual.circle_radius = circle_radius
+		arc_visual.queue_redraw()
+	)
+
+
+## Dispara a explosão de crescimento (chamado pelo Game quando toca a borda da tela).
+func trigger_grow_explode() -> void:
+	_growing = false
+	grow_exploded.emit()
 
 
 ## Inicia a deriva horizontal. Direção (esq/dir) é sorteada aleatoriamente.
@@ -364,6 +423,12 @@ func _apply_random_arc() -> void:
 		var spd := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
 		rotation_speed = spd if randf() > 0.5 else -spd
 		shrink_speed   = randf_range(RAND_SHRINK_SPEED_MIN, RAND_SHRINK_SPEED_MAX)
+		blocked_arcs   = _random_arc_pattern()
+	elif grow_enabled:
+		circle_radius  = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+		var spd := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed = spd if randf() > 0.5 else -spd
+		grow_speed     = randf_range(RAND_GROW_SPEED_MIN, RAND_GROW_SPEED_MAX)
 		blocked_arcs   = _random_arc_pattern()
 	elif drift_enabled:
 		var empty_arcs: Array[Vector2] = []
