@@ -109,6 +109,16 @@ var _poison_angle: float = 0.0   # largura atual em graus
 var _rotation_root_b: Node2D = null
 var _arc_visual_b: Node2D = null
 
+## Quando true, ao pousar a rotação inverte imediatamente e continua invertendo periodicamente.
+## O player precisa re-ler o arco a cada inversão e sair na janela certa.
+@export var reverse_enabled: bool = false
+@export var reverse_interval: float = 1.5   # segundos entre inversões
+var _reversing_active: bool = false
+var _reverse_timer: float = 0.0
+var _reverse_flash: float = 0.0
+
+const REVERSE_FLASH_DURATION := 0.25
+
 ## Quando true, raio, velocidade/direção e padrão de arcos são randomizados no _ready().
 @export var level_randomize: bool = false
 
@@ -134,7 +144,9 @@ const RAND_LASER_SPEED_MIN   := 80.0   # °/s
 const RAND_LASER_SPEED_MAX   := 180.0  # °/s
 const RAND_POISON_SPEED_MIN  := 20.0   # °/s
 const RAND_POISON_SPEED_MAX  := 50.0   # °/s
-const DUAL_RING_OFFSET       := 18.0   # px — anel B desenhado além do anel A
+const DUAL_RING_OFFSET            := 18.0   # px — anel B desenhado além do anel A
+const RAND_REVERSE_INTERVAL_MIN   := 1.0    # s
+const RAND_REVERSE_INTERVAL_MAX   := 2.2    # s
 const RAND_DUAL_SPEED_MIN    := 28.0   # °/s — mais lento para dar tempo de ler os dois anéis
 const RAND_DUAL_SPEED_MAX    := 60.0   # °/s
 
@@ -179,6 +191,11 @@ func _draw() -> void:
 			var pts: int = max(4, int(remaining * 64))
 			# Começa no topo (−PI/2) e drena no sentido horário
 			draw_arc(Vector2.ZERO, ring_r, -PI * 0.5, -PI * 0.5 + span, pts, color, PULSE_RING_WIDTH)
+
+	if _reverse_flash > 0.0:
+		var alpha := _reverse_flash / REVERSE_FLASH_DURATION
+		draw_arc(Vector2.ZERO, circle_radius + 10.0, 0.0, TAU, 32,
+				Color(1.0, 0.9, 0.2, alpha * 0.85), 3.5)
 
 	if _poisoning and _poison_angle > 0.0:
 		var r := circle_radius + 4.0
@@ -275,6 +292,18 @@ func _process(delta: float) -> void:
 
 	if dual_enabled and _rotation_root_b:
 		_rotation_root_b.rotation_degrees += rotation_speed_b * delta
+
+	if _reversing_active:
+		_reverse_timer += delta
+		if _reverse_timer >= reverse_interval:
+			_reverse_timer = 0.0
+			reverse_interval = randf_range(RAND_REVERSE_INTERVAL_MIN, RAND_REVERSE_INTERVAL_MAX)
+			rotation_speed = -rotation_speed
+			_reverse_flash = REVERSE_FLASH_DURATION
+
+	if _reverse_flash > 0.0:
+		_reverse_flash -= delta
+		queue_redraw()
 
 	if _poisoning:
 		_poison_angle += poison_speed * delta
@@ -390,6 +419,22 @@ func start_poisoning() -> void:
 	_poison_start = randf() * 360.0
 	_poison_angle = 0.0
 	_poisoning = true
+
+
+## Inicia as inversões periódicas e inverte imediatamente ao pousar.
+func start_reversing() -> void:
+	if not reverse_enabled:
+		return
+	rotation_speed = -rotation_speed
+	_reverse_flash = REVERSE_FLASH_DURATION
+	_reverse_timer = 0.0
+	reverse_interval = randf_range(RAND_REVERSE_INTERVAL_MIN, RAND_REVERSE_INTERVAL_MAX)
+	_reversing_active = true
+
+
+## Para as inversões periódicas.
+func stop_reversing() -> void:
+	_reversing_active = false
 
 
 ## Para o envenenamento e limpa a zona venenosa.
@@ -563,6 +608,12 @@ func _apply_random_arc() -> void:
 		rotation_speed = spd if randf() > 0.5 else -spd
 		poison_speed   = randf_range(RAND_POISON_SPEED_MIN, RAND_POISON_SPEED_MAX)
 		blocked_arcs   = _random_arc_pattern()
+	elif reverse_enabled:
+		circle_radius    = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+		var spd := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
+		rotation_speed   = spd if randf() > 0.5 else -spd
+		reverse_interval = randf_range(RAND_REVERSE_INTERVAL_MIN, RAND_REVERSE_INTERVAL_MAX)
+		blocked_arcs     = _random_arc_pattern()
 	elif dual_enabled:
 		circle_radius    = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
 		var spd_a := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)

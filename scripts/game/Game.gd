@@ -180,6 +180,8 @@ func _jump_to_next() -> void:
 	if cur.get("poison_enabled"):
 		cur.call("stop_poisoning")
 		_disconnect_poison(cur)
+	if cur.get("reverse_enabled"):
+		cur.call("stop_reversing")
 	var next_idx := (current_index + 1) % circles.size()
 	player.move_to(circles[next_idx])
 
@@ -211,6 +213,8 @@ func _on_player_landed(circle: Node2D) -> void:
 		circle.call("start_poisoning")
 		if not circle.is_connected("poison_exploded", _on_poison_exploded):
 			circle.connect("poison_exploded", _on_poison_exploded)
+	if circle.get("reverse_enabled"):
+		circle.call("start_reversing")
 	if circle.get("bg_number") > 0:
 		last_checkpoint_index = current_index
 
@@ -268,6 +272,8 @@ func _on_player_died(reason: String) -> void:
 	if cur.get("poison_enabled"):
 		cur.call("stop_poisoning")
 		_disconnect_poison(cur)
+	if cur.get("reverse_enabled"):
+		cur.call("stop_reversing")
 	lives -= 1
 	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
@@ -296,3 +302,5 @@ func _reset_circles_after_checkpoint() -> void:
 			c.call("stop_growing")
 		if c.get("poison_enabled"):
 			c.call("stop_poisoning")
+		if c.get("reverse_enabled"):
+			c.call("stop_reversing")

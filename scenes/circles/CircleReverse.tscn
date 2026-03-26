@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_reverse"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo de inversão.
+; Ao pousar, a rotação inverte imediatamente. Continua invertendo periodicamente.
+; O player precisa re-ler a direção do arco a cada inversão e sair na janela certa.
+
+[node name="CircleReverse" instance=ExtResource("1_base")]
+rotation_speed = 75.0
+circle_radius = 68.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+reverse_enabled = true
+reverse_interval = 1.5
+level_randomize = true
