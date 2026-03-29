@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://fenestra_game"]
+[gd_scene load_steps=18 format=3 uid="uid://fenestra_game"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn"        id="2_arc"]
@@ -16,10 +16,11 @@
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleDual.tscn"        id="14_dual"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleReverse.tscn"     id="15_reverse"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftArc.tscn"    id="16_driftarc"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftMirror.tscn" id="17_driftmirror"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
-circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8"), NodePath("DualA"), NodePath("DualB"), NodePath("DualC"), NodePath("CP9"), NodePath("RevA"), NodePath("RevB"), NodePath("RevC"), NodePath("CP10"), NodePath("DriftArcA"), NodePath("DriftArcB"), NodePath("DriftArcC"), NodePath("CP11")]
+circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8"), NodePath("DualA"), NodePath("DualB"), NodePath("DualC"), NodePath("CP9"), NodePath("RevA"), NodePath("RevB"), NodePath("RevC"), NodePath("CP10"), NodePath("DriftArcA"), NodePath("DriftArcB"), NodePath("DriftArcC"), NodePath("CP11"), NodePath("DriftMirA"), NodePath("DriftMirB"), NodePath("DriftMirC"), NodePath("CP12")]
 
 ; ── CÂMERA (controlada por Game.gd) ─────────────────────────────────────────
 
@@ -246,6 +247,25 @@ level_randomize = true
 position = Vector2(195, -18900)
 circle_radius = 72.0
 bg_number = 12
+
+; ── NÍVEL 12 — DERIVA COM ESPELHO ──────────────────────────────────────────
+
+[node name="DriftMirA" parent="." instance=ExtResource("17_driftmirror")]
+position = Vector2(175, -19350)
+level_randomize = true
+
+[node name="DriftMirB" parent="." instance=ExtResource("17_driftmirror")]
+position = Vector2(215, -19800)
+level_randomize = true
+
+[node name="DriftMirC" parent="." instance=ExtResource("17_driftmirror")]
+position = Vector2(190, -20250)
+level_randomize = true
+
+[node name="CP12" parent="." instance=ExtResource("1_checkpoint")]
+position = Vector2(195, -20700)
+circle_radius = 72.0
+bg_number = 13
 
 ; ── SPIKE WALLS (CanvasLayer — screen space, fixo) ───────────────────────────
 

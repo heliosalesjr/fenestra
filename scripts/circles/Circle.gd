@@ -622,6 +622,13 @@ func _apply_random_arc() -> void:
 		rotation_speed_b = spd_b if randf() > 0.5 else -spd_b
 		blocked_arcs     = _random_arc_pattern_dual()
 		blocked_arcs_b   = _random_arc_pattern_dual()
+	elif drift_enabled and mirror_mode:
+		# Drift + espelho: deriva lateral com inversão a cada pouso
+		circle_radius  = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+		var spd := randf_range(RAND_MIRROR_SPEED_MIN, RAND_MIRROR_SPEED_MAX)
+		rotation_speed = spd if randf() > 0.5 else -spd
+		drift_speed    = randf_range(RAND_DRIFT_SPEED_MIN, RAND_DRIFT_SPEED_MAX)
+		blocked_arcs   = _random_arc_pattern()
 	elif drift_enabled and not pulse_enabled:
 		# Drift + arco: combina deriva lateral com janela de arco giratório
 		circle_radius = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)

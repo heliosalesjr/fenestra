@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_drift_mirror"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo de deriva com espelho.
+; Combina a deriva lateral do nível 7 com a inversão do espelho do nível 5.
+; A cada pouso: rotação inverte E o círculo começa a se mover lateralmente.
+
+[node name="CircleDriftMirror" instance=ExtResource("1_base")]
+rotation_speed = 75.0
+circle_radius = 65.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+drift_enabled = true
+drift_speed = 35.0
+mirror_mode = true
+level_randomize = true
