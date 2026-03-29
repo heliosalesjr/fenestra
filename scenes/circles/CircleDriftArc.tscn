@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_drift_arc"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo de deriva com arco.
+; Combina a deriva lateral do nível 7 com os arcos bloqueados do nível 1.
+; O player precisa ler a janela do arco E sair antes que o círculo toque nas spikes.
+
+[node name="CircleDriftArc" instance=ExtResource("1_base")]
+rotation_speed = 75.0
+circle_radius = 68.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+drift_enabled = true
+drift_speed = 40.0
+level_randomize = true

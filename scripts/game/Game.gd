@@ -68,6 +68,7 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_follow_drift_circle()
 	_check_grow_wall()
+	_update_item_positions()
 	_check_items()
 
 
@@ -164,9 +165,23 @@ func _spawn_items() -> void:
 		var item: Node2D = scene.instantiate()
 		item.set("item_type", _random_item_type())
 		item.position = mid
+		item.set_meta("circle_a", circles[i])
+		item.set_meta("circle_b", circles[i + 1])
 		add_child(item)
 		item.connect("collected", _on_item_collected)
 		_items.append(item)
+
+
+func _update_item_positions() -> void:
+	for item in _items:
+		if not is_instance_valid(item):
+			continue
+		if not item.get("_active"):
+			continue
+		var ca := item.get_meta("circle_a") as Node2D
+		var cb := item.get_meta("circle_b") as Node2D
+		if is_instance_valid(ca) and is_instance_valid(cb):
+			item.position = (ca.position + cb.position) * 0.5
 
 
 func _check_items() -> void:
