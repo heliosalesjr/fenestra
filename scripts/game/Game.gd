@@ -2,16 +2,30 @@ extends Node2D
 
 @export var circle_sequence: Array[NodePath] = []
 
+## Probabilidade de um item aparecer entre cada par de círculos (0.0 = nunca, 1.0 = sempre).
+@export var item_spawn_chance: float = 0.4
+## Pesos relativos por tipo de item (ajuste para controlar frequência de cada um).
+@export var coin_weight:   int = 70
+@export var life_weight:   int = 20
+@export var shield_weight: int = 10
+
 @onready var player: Node2D       = $Player
 @onready var _camera: Camera2D    = $Camera2D
 @onready var _ui: Control         = $UI/TopBar
 @onready var _spike_walls: Node2D = $SpikeLayer/SpikeWalls
 
 var circles: Array[Node2D] = []
+var _items:  Array[Node2D] = []
+var _player_prev_pos: Vector2 = Vector2.ZERO
 var current_index: int = 0
 var last_checkpoint_index: int = 0
 var lives: int = 99
 var _first_walls_index: int = -1   # primeiro círculo com drift ou grow (ativa spikes)
+
+const ITEM_COLLECT_RADIUS := 20.0
+const ITEM_COIN   := 0
+const ITEM_LIFE   := 1
+const ITEM_SHIELD := 2
 
 const RESPAWN_DELAY  := 1.0
 const VIEWPORT_H     := 844.0
@@ -46,6 +60,7 @@ func _ready() -> void:
 	_camera.global_position = _cam_pos
 	_camera.zoom = Vector2(_cam_zoom, _cam_zoom)
 
+	_spawn_items()
 	queue_redraw()
 
 
@@ -53,6 +68,7 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_follow_drift_circle()
 	_check_grow_wall()
+	_check_items()
 
 
 # ─── Câmera ──────────────────────────────────────────────────────────────────
@@ -135,6 +151,65 @@ func _check_grow_wall() -> void:
 	if cur.position.x - radius <= wall_left or \
 	   cur.position.x + radius >= wall_right:
 		cur.call("trigger_grow_explode")
+
+
+# ─── Itens ───────────────────────────────────────────────────────────────────
+
+func _spawn_items() -> void:
+	var scene := preload("res://scenes/entities/Item.tscn")
+	for i in range(circles.size() - 1):
+		if randf() > item_spawn_chance:
+			continue
+		var mid := (circles[i].position + circles[i + 1].position) * 0.5
+		var item: Node2D = scene.instantiate()
+		item.set("item_type", _random_item_type())
+		item.position = mid
+		add_child(item)
+		item.connect("collected", _on_item_collected)
+		_items.append(item)
+
+
+func _check_items() -> void:
+	if player.state != player.State.MOVING:
+		_player_prev_pos = player.global_position
+		return
+	for item in _items:
+		if not is_instance_valid(item):
+			continue
+		if item.get("_active") and \
+				_segment_dist(_player_prev_pos, player.global_position, item.global_position) < ITEM_COLLECT_RADIUS:
+			item.call("collect")
+	_player_prev_pos = player.global_position
+
+
+func _segment_dist(a: Vector2, b: Vector2, p: Vector2) -> float:
+	var ab := b - a
+	var len_sq := ab.length_squared()
+	if len_sq < 0.0001:
+		return a.distance_to(p)
+	var t := clampf((p - a).dot(ab) / len_sq, 0.0, 1.0)
+	return (a + ab * t).distance_to(p)
+
+
+func _random_item_type() -> int:
+	var total := coin_weight + life_weight + shield_weight
+	var r := randi() % total
+	if r < coin_weight:
+		return ITEM_COIN
+	elif r < coin_weight + life_weight:
+		return ITEM_LIFE
+	else:
+		return ITEM_SHIELD
+
+
+func _on_item_collected(type: int) -> void:
+	match type:
+		ITEM_COIN:
+			pass  # TODO: adicionar moeda ao score
+		ITEM_LIFE:
+			pass  # TODO: restaurar vida (lives = min(lives + 1, max_lives))
+		ITEM_SHIELD:
+			pass  # TODO: ativar escudo
 
 
 # ─── Desenho ─────────────────────────────────────────────────────────────────
