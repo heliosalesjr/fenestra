@@ -5,10 +5,10 @@ signal player_died(reason: String)
 
 enum State { ON_CIRCLE, MOVING, DEAD }
 
-const PLAYER_RADIUS := 12.0
-const PLAYER_COLOR  := Color(1.0, 0.85, 0.2)
-const DEAD_COLOR    := Color(1.0, 0.2, 0.2)
-const MOVE_DURATION := 0.14
+@export var player_radius: float = 12.0
+@export var player_color: Color  = Color(1.0, 0.85, 0.2)
+@export var dead_color: Color    = Color(1.0, 0.2, 0.2)
+@export var move_duration: float = 0.14
 
 var state: State = State.ON_CIRCLE
 var current_circle: Node2D = null
@@ -17,8 +17,8 @@ var _active_tween: Tween = null
 
 
 func _draw() -> void:
-	var color := DEAD_COLOR if state == State.DEAD else PLAYER_COLOR
-	draw_circle(Vector2.ZERO, PLAYER_RADIUS, color)
+	var color := dead_color if state == State.DEAD else player_color
+	draw_circle(Vector2.ZERO, player_radius, color)
 
 
 func _process(_delta: float) -> void:
@@ -43,7 +43,7 @@ func move_to(target: Node2D) -> void:
 	destination_circle = target
 	state = State.MOVING
 	_active_tween = create_tween()
-	_active_tween.tween_property(self, "global_position", target.global_position, MOVE_DURATION).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
+	_active_tween.tween_property(self, "global_position", target.global_position, move_duration).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
 	_active_tween.tween_callback(_on_arrived)
 
 	# Checagem de SAÍDA: borda escura ou círculo inativo = morte imediata.
@@ -159,7 +159,7 @@ func _check_chaser_collision() -> void:
 		if not child.has_method("fade_and_free"):
 			continue
 		var orb_radius: float = child.get("sphere_radius")
-		if global_position.distance_to(child.global_position) < PLAYER_RADIUS + orb_radius:
+		if global_position.distance_to(child.global_position) < player_radius + orb_radius:
 			_die("chaser")
 			return
 
@@ -169,7 +169,7 @@ func _check_orbiter_collision() -> void:
 		if not child.has_method("fade_and_free"):
 			continue
 		var orb_radius: float = child.get("sphere_radius")
-		if global_position.distance_to(child.global_position) < PLAYER_RADIUS + orb_radius:
+		if global_position.distance_to(child.global_position) < player_radius + orb_radius:
 			_die("orbiter")
 			return
 
