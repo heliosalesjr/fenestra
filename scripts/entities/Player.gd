@@ -66,6 +66,9 @@ func respawn(circle: Node2D) -> void:
 	queue_redraw()
 	if _active_tween:
 		_active_tween.kill()
+	get_tree().create_timer(0.12).timeout.connect(
+		func(): sprite.modulate = Color(8.0, 2.5, 2.5, 1.0)
+	)
 	var hop := global_position + Vector2(0.0, -110.0)
 	_active_tween = create_tween()
 	_active_tween.tween_property(self, "global_position", hop, 0.22) \
@@ -84,18 +87,20 @@ func _on_arrived() -> void:
 	if circle.is_landing_valid(approach_angle_deg):
 		var outward_dir := (from_pos - circle.global_position).normalized()
 		var radius: float = circle.get("circle_radius")
-		_spawn_burst(circle.global_position + outward_dir * radius, outward_dir)
+		var arc_visual := circle.get_node_or_null("RotationRoot/ArcVisual")
+		var ring_color: Color = arc_visual.free_color if arc_visual else Color(0.2, 0.9, 0.3)
+		_spawn_burst(circle.global_position + outward_dir * radius, outward_dir, ring_color)
 		attach_to_circle(circle)
 		landed_on.emit(circle)
 	else:
 		_die(circle.last_fail_reason)
 
 
-func _spawn_burst(contact: Vector2, outward_dir: Vector2) -> void:
+func _spawn_burst(contact: Vector2, outward_dir: Vector2, color: Color = Color(0.2, 0.9, 0.3)) -> void:
 	var burst := preload("res://scripts/fx/PixelBurst.gd").new()
 	get_parent().add_child(burst)
 	burst.global_position = contact
-	burst.fire(outward_dir)
+	burst.fire(outward_dir, color)
 
 
 # Verifica se a direção `world_dir` (vetor do centro do círculo → ponto na borda)
@@ -211,6 +216,5 @@ func _die(reason: String) -> void:
 		_active_tween.kill()
 		_active_tween = null
 	state = State.DEAD
-	sprite.modulate = Color(8.0, 2.5, 2.5, 1.0)
 	queue_redraw()
 	player_died.emit(reason)

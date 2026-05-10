@@ -10,17 +10,16 @@ const SPEED_MAX      := 300.0
 const LIFETIME       := 0.4
 const FRICTION       := 0.88  # multiplicador de velocidade por frame
 
-const COLORS: Array = [
-	Color(0.2, 0.9,  0.3),     # verde base do círculo
-	Color(0.4, 1.0,  0.5),     # verde claro
-	Color(0.1, 0.75, 0.25),    # verde escuro
-	Color(0.7, 1.0,  0.75),    # verde quase branco
-]
-
 var _particles: Array = []
 
 
-func fire(_outward_dir: Vector2) -> void:
+func fire(_outward_dir: Vector2, base_color: Color = Color(0.2, 0.9, 0.3)) -> void:
+	var colors: Array[Color] = [
+		base_color,
+		base_color.lightened(0.35),
+		base_color.lightened(0.6),
+		base_color.darkened(0.25),
+	]
 	for i in PARTICLE_COUNT:
 		var angle := randf() * TAU
 		var dir   := Vector2(cos(angle), sin(angle))
@@ -31,7 +30,7 @@ func fire(_outward_dir: Vector2) -> void:
 			"vel":   dir * speed,
 			"age":   0.0,
 			"size":  sz,
-			"color": COLORS[randi() % COLORS.size()],
+			"color": colors[randi() % colors.size()],
 		})
 
 
