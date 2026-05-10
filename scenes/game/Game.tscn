@@ -1,36 +1,31 @@
-[gd_scene load_steps=18 format=3 uid="uid://fenestra_game"]
+[gd_scene load_steps=18 format=3 uid="uid://cb73n3p12qvfm"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn"        id="2_arc"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CirclePulse.tscn"       id="3_pulse"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleOrbiter.tscn"     id="4_orbiter"]
-[ext_resource type="PackedScene" path="res://scenes/entities/Player.tscn"           id="5_player"]
-[ext_resource type="Script"      path="res://scripts/game/Game.gd"                  id="6_game"]
-[ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn"                     id="7_ui"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleChaser.tscn"      id="8_chaser"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleMirror.tscn"      id="9_mirror"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleShrink.tscn"      id="10_shrink"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleDrift.tscn"       id="11_drift"]
-[ext_resource type="Script"      path="res://scripts/game/SpikeWalls.gd"            id="12_spikewalls"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleGrow.tscn"        id="13_grow"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleDual.tscn"        id="14_dual"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleReverse.tscn"     id="15_reverse"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftArc.tscn"    id="16_driftarc"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn" id="2_arc"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CirclePulse.tscn" id="3_pulse"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleOrbiter.tscn" id="4_orbiter"]
+[ext_resource type="PackedScene" path="res://scenes/entities/Player.tscn" id="5_player"]
+[ext_resource type="Script" uid="uid://4w5omflc8l2m" path="res://scripts/game/Game.gd" id="6_game"]
+[ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn" id="7_ui"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleChaser.tscn" id="8_chaser"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleMirror.tscn" id="9_mirror"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleShrink.tscn" id="10_shrink"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleDrift.tscn" id="11_drift"]
+[ext_resource type="Script" uid="uid://dprwp8crkpugq" path="res://scripts/game/SpikeWalls.gd" id="12_spikewalls"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleGrow.tscn" id="13_grow"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleDual.tscn" id="14_dual"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleReverse.tscn" id="15_reverse"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftArc.tscn" id="16_driftarc"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftMirror.tscn" id="17_driftmirror"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
-circle_sequence = [NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8"), NodePath("DualA"), NodePath("DualB"), NodePath("DualC"), NodePath("CP9"), NodePath("RevA"), NodePath("RevB"), NodePath("RevC"), NodePath("CP10"), NodePath("DriftArcA"), NodePath("DriftArcB"), NodePath("DriftArcC"), NodePath("CP11"), NodePath("DriftMirA"), NodePath("DriftMirB"), NodePath("DriftMirC"), NodePath("CP12")]
-
-; ── CÂMERA (controlada por Game.gd) ─────────────────────────────────────────
+circle_sequence = Array[NodePath]([NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8"), NodePath("DualA"), NodePath("DualB"), NodePath("DualC"), NodePath("CP9"), NodePath("RevA"), NodePath("RevB"), NodePath("RevC"), NodePath("CP10"), NodePath("DriftArcA"), NodePath("DriftArcB"), NodePath("DriftArcC"), NodePath("CP11"), NodePath("DriftMirA"), NodePath("DriftMirB"), NodePath("DriftMirC"), NodePath("CP12")])
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
-; ── NÍVEL 1 — ARCOS ──────────────────────────────────────────────────────────
-
 [node name="CircleStart" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, 900)
-circle_radius = 72.0
 
 [node name="ArcA" parent="." instance=ExtResource("2_arc")]
 position = Vector2(95, 450)
@@ -49,8 +44,6 @@ position = Vector2(255, -900)
 circle_radius = 70.0
 bg_number = 2
 
-; ── NÍVEL 2 — PULSO ──────────────────────────────────────────────────────────
-
 [node name="PulseA" parent="." instance=ExtResource("3_pulse")]
 position = Vector2(82, -1350)
 level_randomize = true
@@ -68,26 +61,24 @@ position = Vector2(225, -2700)
 circle_radius = 70.0
 bg_number = 3
 
-; ── NÍVEL 3 — ORBITERS ───────────────────────────────────────────────────────
-
 [node name="OrbA" parent="." instance=ExtResource("4_orbiter")]
 position = Vector2(88, -3150)
-circle_radius = 62.0
 rotation_speed = 65.0
+circle_radius = 62.0
 orbiter_count = 9
 orbiter_base_radius_mult = 1.55
 
 [node name="OrbB" parent="." instance=ExtResource("4_orbiter")]
 position = Vector2(300, -3600)
-circle_radius = 74.0
 rotation_speed = -52.0
+circle_radius = 74.0
 orbiter_count = 18
 orbiter_base_radius_mult = 1.85
 
 [node name="OrbC" parent="." instance=ExtResource("4_orbiter")]
 position = Vector2(108, -4050)
-circle_radius = 54.0
 rotation_speed = 90.0
+circle_radius = 54.0
 orbiter_count = 28
 orbiter_base_radius_mult = 2.1
 
@@ -95,8 +86,6 @@ orbiter_base_radius_mult = 2.1
 position = Vector2(195, -4500)
 circle_radius = 78.0
 bg_number = 4
-
-; ── NÍVEL 4 — ORBITERS PERSEGUIDORES ────────────────────────────────────────
 
 [node name="ChaserA" parent="." instance=ExtResource("8_chaser")]
 position = Vector2(108, -4950)
@@ -112,10 +101,7 @@ level_randomize = true
 
 [node name="CP4" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -6300)
-circle_radius = 72.0
 bg_number = 5
-
-; ── NÍVEL 5 — ESPELHO ────────────────────────────────────────────────────────
 
 [node name="MirrorA" parent="." instance=ExtResource("9_mirror")]
 position = Vector2(105, -6750)
@@ -131,10 +117,7 @@ level_randomize = true
 
 [node name="CP5" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -8100)
-circle_radius = 72.0
 bg_number = 6
-
-; ── NÍVEL 6 — ENCOLHEDOR ─────────────────────────────────────────────────────
 
 [node name="ShrinkA" parent="." instance=ExtResource("10_shrink")]
 position = Vector2(108, -8550)
@@ -150,10 +133,7 @@ level_randomize = true
 
 [node name="CP6" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -9900)
-circle_radius = 72.0
 bg_number = 7
-
-; ── NÍVEL 7 — DESLIZANTE ─────────────────────────────────────────────────────
 
 [node name="DriftA" parent="." instance=ExtResource("11_drift")]
 position = Vector2(175, -10350)
@@ -169,118 +149,80 @@ level_randomize = true
 
 [node name="CP7" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -11700)
-circle_radius = 72.0
 bg_number = 8
-
-; ── NÍVEL 8 — INFLADOR ────────────────────────────────────────────────────────
 
 [node name="GrowA" parent="." instance=ExtResource("13_grow")]
 position = Vector2(155, -12150)
-level_randomize = true
 
 [node name="GrowB" parent="." instance=ExtResource("13_grow")]
 position = Vector2(235, -12600)
-level_randomize = true
 
 [node name="GrowC" parent="." instance=ExtResource("13_grow")]
 position = Vector2(160, -13050)
-level_randomize = true
 
 [node name="CP8" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -13500)
-circle_radius = 72.0
 bg_number = 9
-
-; ── NÍVEL 9 — DUPLA ROTAÇÃO ───────────────────────────────────────────────────
 
 [node name="DualA" parent="." instance=ExtResource("14_dual")]
 position = Vector2(108, -13950)
-level_randomize = true
 
 [node name="DualB" parent="." instance=ExtResource("14_dual")]
 position = Vector2(282, -14400)
-level_randomize = true
 
 [node name="DualC" parent="." instance=ExtResource("14_dual")]
 position = Vector2(115, -14850)
-level_randomize = true
 
 [node name="CP9" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -15300)
-circle_radius = 72.0
 bg_number = 10
-
-; ── NÍVEL 10 — INVERSÃO ───────────────────────────────────────────────────────
 
 [node name="RevA" parent="." instance=ExtResource("15_reverse")]
 position = Vector2(108, -15750)
-level_randomize = true
 
 [node name="RevB" parent="." instance=ExtResource("15_reverse")]
 position = Vector2(282, -16200)
-level_randomize = true
 
 [node name="RevC" parent="." instance=ExtResource("15_reverse")]
 position = Vector2(115, -16650)
-level_randomize = true
 
 [node name="CP10" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -17100)
-circle_radius = 72.0
 bg_number = 11
-
-; ── NÍVEL 11 — DERIVA COM ARCO ────────────────────────────────────────────────
 
 [node name="DriftArcA" parent="." instance=ExtResource("16_driftarc")]
 position = Vector2(108, -17550)
-level_randomize = true
 
 [node name="DriftArcB" parent="." instance=ExtResource("16_driftarc")]
 position = Vector2(282, -18000)
-level_randomize = true
 
 [node name="DriftArcC" parent="." instance=ExtResource("16_driftarc")]
 position = Vector2(115, -18450)
-level_randomize = true
 
 [node name="CP11" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -18900)
-circle_radius = 72.0
 bg_number = 12
-
-; ── NÍVEL 12 — DERIVA COM ESPELHO ──────────────────────────────────────────
 
 [node name="DriftMirA" parent="." instance=ExtResource("17_driftmirror")]
 position = Vector2(175, -19350)
-level_randomize = true
 
 [node name="DriftMirB" parent="." instance=ExtResource("17_driftmirror")]
 position = Vector2(215, -19800)
-level_randomize = true
 
 [node name="DriftMirC" parent="." instance=ExtResource("17_driftmirror")]
 position = Vector2(190, -20250)
-level_randomize = true
 
 [node name="CP12" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -20700)
-circle_radius = 72.0
 bg_number = 13
 
-; ── SPIKE WALLS (CanvasLayer — screen space, fixo) ───────────────────────────
-
 [node name="SpikeLayer" type="CanvasLayer" parent="."]
-layer = 1
 
 [node name="SpikeWalls" type="Node2D" parent="SpikeLayer"]
 visible = false
 script = ExtResource("12_spikewalls")
 
-; ── PLAYER ───────────────────────────────────────────────────────────────────
-
 [node name="Player" parent="." instance=ExtResource("5_player")]
 position = Vector2(195, 900)
-
-; ── UI ───────────────────────────────────────────────────────────────────────
 
 [node name="UI" parent="." instance=ExtResource("7_ui")]
