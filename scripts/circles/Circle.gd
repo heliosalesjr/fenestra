@@ -782,6 +782,22 @@ func _angle_in_arc(angle: float, start: float, end: float) -> bool:
 		return angle >= start or angle <= end
 
 
+func set_ring_color(color: Color) -> void:
+	arc_visual.free_color = color
+	arc_visual.queue_redraw()
+	if _arc_visual_b:
+		_arc_visual_b.free_color = color
+		_arc_visual_b.queue_redraw()
+
+
+func set_thin_border(thin: bool) -> void:
+	arc_visual.thin_border = thin
+	arc_visual.queue_redraw()
+	if _arc_visual_b:
+		_arc_visual_b.thin_border = thin
+		_arc_visual_b.queue_redraw()
+
+
 func _sync_arc_visual() -> void:
 	if not is_node_ready():
 		return

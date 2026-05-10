@@ -27,6 +27,16 @@ const ITEM_COIN   := 0
 const ITEM_LIFE   := 1
 const ITEM_SHIELD := 2
 
+const RING_PALETTE: Array[Color] = [
+	Color(0.2,  0.9,  0.3,  1.0),  # verde
+	Color(1.0,  0.9,  0.1,  1.0),  # amarelo
+	Color(0.2,  0.5,  1.0,  1.0),  # azul
+	Color(0.7,  0.2,  1.0,  1.0),  # roxo
+	Color(1.0,  0.5,  0.1,  1.0),  # laranja
+	Color(1.0,  0.3,  0.7,  1.0),  # rosa
+	Color(0.9,  0.9,  0.9,  1.0),  # branco
+]
+
 const RESPAWN_DELAY  := 1.0
 const VIEWPORT_H     := 844.0
 const VIEWPORT_W     := 390.0
@@ -42,6 +52,13 @@ var _cam_zoom: float   = 1.0
 func _ready() -> void:
 	for path in circle_sequence:
 		circles.append(get_node(path))
+
+	var palette_idx := 0
+	for i in circles.size():
+		if circles[i].get("bg_number") > 0:
+			palette_idx += 1
+			circles[i].call("set_thin_border", true)
+		circles[i].call("set_ring_color", RING_PALETTE[palette_idx % RING_PALETTE.size()])
 
 	for i in circles.size():
 		if circles[i].get("drift_enabled") or circles[i].get("grow_enabled"):

@@ -4,8 +4,8 @@ extends Node2D
 ## Desenhado como filho de RotationRoot.
 ## As coordenadas são locais ao RotationRoot, então giram automaticamente com ele.
 
-const FREE_COLOR    := Color(0.2, 0.9, 0.3)
 const BLOCKED_COLOR := Color(0.15, 0.15, 0.15, 1.0)
+var free_color: Color = Color(0.2, 0.9, 0.3)
 
 ## Tamanho de cada "pixel" em screen pixels. Aumente para mais chunky.
 const PIXEL_SIZE := 4.0
@@ -13,9 +13,17 @@ const PIXEL_SIZE := 4.0
 var circle_radius: float = 80.0
 var blocked_arcs: Array = []  # Array de Vector2(start_deg, end_deg)
 var mirror_flipped: bool = false
+var thin_border: bool = false
 
 
 func _draw() -> void:
+	if thin_border:
+		_draw_thin()
+	else:
+		_draw_pixel()
+
+
+func _draw_pixel() -> void:
 	var r_px: int = int(round(circle_radius / PIXEL_SIZE))
 	var pixels := _midpoint_circle(r_px)
 	var half := PIXEL_SIZE * 0.5
@@ -25,10 +33,33 @@ func _draw() -> void:
 		var in_blocked := _in_blocked_arc(angle)
 		var color: Color
 		if not mirror_flipped:
-			color = BLOCKED_COLOR if in_blocked else FREE_COLOR
+			color = BLOCKED_COLOR if in_blocked else free_color
 		else:
-			color = FREE_COLOR if in_blocked else BLOCKED_COLOR
+			color = free_color if in_blocked else BLOCKED_COLOR
 		draw_rect(Rect2(world - Vector2(half, half), Vector2(PIXEL_SIZE, PIXEL_SIZE)), color)
+
+
+func _draw_thin() -> void:
+	if not mirror_flipped:
+		draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, 64, free_color, 1.0)
+		for arc in blocked_arcs:
+			_draw_thin_segment(arc.x, arc.y, BLOCKED_COLOR)
+	else:
+		draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, 64, BLOCKED_COLOR, 1.0)
+		for arc in blocked_arcs:
+			_draw_thin_segment(arc.x, arc.y, free_color)
+
+
+func _draw_thin_segment(start_deg: float, end_deg: float, color: Color) -> void:
+	if start_deg <= end_deg:
+		var pts: int = max(4, int((end_deg - start_deg) / 360.0 * 64))
+		draw_arc(Vector2.ZERO, circle_radius,
+				deg_to_rad(start_deg), deg_to_rad(end_deg), pts, color, 1.0)
+	else:
+		var pts1: int = max(4, int((360.0 - start_deg) / 360.0 * 64))
+		var pts2: int = max(4, int(end_deg / 360.0 * 64))
+		draw_arc(Vector2.ZERO, circle_radius, deg_to_rad(start_deg), TAU, pts1, color, 1.0)
+		draw_arc(Vector2.ZERO, circle_radius, 0.0, deg_to_rad(end_deg), pts2, color, 1.0)
 
 
 func _midpoint_circle(r: int) -> Array[Vector2i]:
