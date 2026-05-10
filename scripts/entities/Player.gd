@@ -65,10 +65,20 @@ func _on_arrived() -> void:
 	var from_pos := current_circle.global_position if current_circle else global_position
 	var approach_angle_deg := rad_to_deg((from_pos - circle.global_position).angle())
 	if circle.is_landing_valid(approach_angle_deg):
+		var outward_dir := (from_pos - circle.global_position).normalized()
+		var radius: float = circle.get("circle_radius")
+		_spawn_burst(circle.global_position + outward_dir * radius, outward_dir)
 		attach_to_circle(circle)
 		landed_on.emit(circle)
 	else:
 		_die(circle.last_fail_reason)
+
+
+func _spawn_burst(contact: Vector2, outward_dir: Vector2) -> void:
+	var burst := preload("res://scripts/fx/PixelBurst.gd").new()
+	get_parent().add_child(burst)
+	burst.global_position = contact
+	burst.fire(outward_dir)
 
 
 # Verifica se a direção `world_dir` (vetor do centro do círculo → ponto na borda)

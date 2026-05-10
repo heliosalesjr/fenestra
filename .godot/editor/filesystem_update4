@@ -1,2 +1,4 @@
 res://scripts/circles/ArcVisual.gd
 res://scenes/game/Game.tscn
+res://scripts/entities/Player.gd
+res://scripts/fx/PixelBurst.gd
