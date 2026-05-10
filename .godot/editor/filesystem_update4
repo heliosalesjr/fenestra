@@ -4,3 +4,4 @@ res://scripts/entities/Player.gd
 res://scripts/fx/PixelBurst.gd
 res://scripts/circles/Circle.gd
 res://scripts/game/Game.gd
+res://scenes/entities/Player.tscn

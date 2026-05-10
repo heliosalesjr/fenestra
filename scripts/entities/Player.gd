@@ -15,8 +15,12 @@ var current_circle: Node2D = null
 var destination_circle: Node2D = null
 var _active_tween: Tween = null
 
+@onready var sprite: Sprite2D = $Sprite2D
+
 
 func _draw() -> void:
+	if sprite.texture != null:
+		return
 	var color := dead_color if state == State.DEAD else player_color
 	draw_circle(Vector2.ZERO, player_radius, color)
 
@@ -39,6 +43,8 @@ func attach_to_circle(circle: Node2D) -> void:
 func move_to(target: Node2D) -> void:
 	if state != State.ON_CIRCLE:
 		return
+
+	sprite.flip_h = target.global_position.x > global_position.x
 
 	destination_circle = target
 	state = State.MOVING
