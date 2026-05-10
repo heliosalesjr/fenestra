@@ -37,7 +37,7 @@ const RING_PALETTE: Array[Color] = [
 	Color(0.9,  0.9,  0.9,  1.0),  # branco
 ]
 
-const RESPAWN_DELAY  := 1.0
+const RESPAWN_DELAY  := 0.35
 const VIEWPORT_H     := 844.0
 const VIEWPORT_W     := 390.0
 const CAM_POS_SMOOTH := 6.0

@@ -37,6 +37,7 @@ func attach_to_circle(circle: Node2D) -> void:
 	destination_circle = null
 	state = State.ON_CIRCLE
 	global_position = circle.global_position
+	sprite.modulate = Color(6.34502, 6.34502, 6.34502, 1.0)
 	queue_redraw()
 
 
@@ -61,7 +62,17 @@ func move_to(target: Node2D) -> void:
 
 
 func respawn(circle: Node2D) -> void:
-	attach_to_circle(circle)
+	state = State.MOVING
+	queue_redraw()
+	if _active_tween:
+		_active_tween.kill()
+	var hop := global_position + Vector2(0.0, -110.0)
+	_active_tween = create_tween()
+	_active_tween.tween_property(self, "global_position", hop, 0.22) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_active_tween.tween_property(self, "global_position", circle.global_position, 0.48) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_active_tween.tween_callback(func(): attach_to_circle(circle))
 
 
 func _on_arrived() -> void:
@@ -200,5 +211,6 @@ func _die(reason: String) -> void:
 		_active_tween.kill()
 		_active_tween = null
 	state = State.DEAD
+	sprite.modulate = Color(8.0, 2.5, 2.5, 1.0)
 	queue_redraw()
 	player_died.emit(reason)
