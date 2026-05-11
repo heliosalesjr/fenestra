@@ -108,10 +108,12 @@ func _draw_elec_span(start_deg: float, end_deg: float) -> void:
 		if i > 0 and i < n:
 			r += randf_range(-7.0, 7.0)
 		pts.append(Vector2(cos(angle_rad), sin(angle_rad)) * r)
-	var c := free_color
-	draw_polyline(pts, Color(c.r, c.g, c.b, 0.10), 10.0, true)
-	draw_polyline(pts, Color(c.r, c.g, c.b, 0.28),  5.0, true)
-	draw_polyline(pts, Color(c.r, c.g, c.b, 0.88),  1.5, true)
+	# Glow externo: vermelho-alaranjado (perigo)
+	draw_polyline(pts, Color(0.9, 0.15, 0.05, 0.18), 11.0, true)
+	# Glow médio: vermelho mais vivo
+	draw_polyline(pts, Color(1.0, 0.25, 0.05, 0.40),  5.0, true)
+	# Núcleo: branco quase puro (relâmpago real)
+	draw_polyline(pts, Color(1.0, 0.92, 0.88, 0.95),  1.5, true)
 
 
 # ─── Arco sólido ──────────────────────────────────────────────────────────────
