@@ -19,7 +19,7 @@ var _elec_timer: float = 0.0
 
 
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint() or blocked_arcs.is_empty() or mirror_flipped or thin_border:
+	if Engine.is_editor_hint() or blocked_arcs.is_empty() or thin_border:
 		return
 	_elec_timer += delta
 	if _elec_timer >= ELEC_INTERVAL:
@@ -30,13 +30,20 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var width := 1.0 if thin_border else ARC_WIDTH
 
-	if thin_border or mirror_flipped:
-		# Checkpoint e mirror: círculo completo + arcos sólidos sobrepostos
-		var base_color  := free_color   if not mirror_flipped else BLOCKED_COLOR
-		var fill_color  := BLOCKED_COLOR if not mirror_flipped else free_color
-		draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, ARC_POINTS, base_color, width)
+	if thin_border:
+		# Checkpoint: círculo completo + arcos sólidos sobrepostos
+		draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, ARC_POINTS, free_color, width)
 		for arc in blocked_arcs:
-			_draw_arc_segment(arc.x, arc.y, fill_color, width)
+			_draw_arc_segment(arc.x, arc.y, BLOCKED_COLOR, width)
+		return
+
+	if mirror_flipped:
+		# Mirror flipped: zonas seguras (blocked_arcs originais) em verde sólido,
+		# zonas perigosas (complemento) em eletricidade
+		for arc in blocked_arcs:
+			_draw_arc_segment(arc.x, arc.y, free_color, ARC_WIDTH)
+		for fa in _free_arcs():
+			_draw_electricity(fa.x, fa.y)
 		return
 
 	# Normal: partes livres em arco sólido, partes bloqueadas em eletricidade
