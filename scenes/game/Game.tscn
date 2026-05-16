@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn" id="2_arc"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CirclePulse.tscn" id="3_pulse"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleOrbiter.tscn" id="4_orbiter"]
-[ext_resource type="PackedScene" path="res://scenes/entities/Player.tscn" id="5_player"]
+[ext_resource type="PackedScene" uid="uid://dke5550ndtj7q" path="res://scenes/entities/Player.tscn" id="5_player"]
 [ext_resource type="Script" uid="uid://4w5omflc8l2m" path="res://scripts/game/Game.gd" id="6_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn" id="7_ui"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleChaser.tscn" id="8_chaser"]

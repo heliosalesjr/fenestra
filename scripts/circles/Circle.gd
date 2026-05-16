@@ -811,7 +811,10 @@ func _sync_arc_visual() -> void:
 
 
 func _sync_active_state() -> void:
-	modulate.a = 1.0 if is_active else 0.3
+	if not is_node_ready():
+		return
+	arc_visual.pulse_inactive = not is_active
+	arc_visual.queue_redraw()
 
 
 func _sync_collision_shape() -> void:

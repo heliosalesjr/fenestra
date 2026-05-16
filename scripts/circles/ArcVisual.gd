@@ -12,14 +12,17 @@ const ELEC_INTERVAL  := 0.055  # segundos entre flickers da eletricidade
 var free_color: Color    = Color(0.2, 0.9, 0.3)
 var circle_radius: float = 80.0
 var blocked_arcs: Array  = []  # Array de Vector2(start_deg, end_deg)
-var mirror_flipped: bool = false
-var thin_border: bool    = false
+var mirror_flipped: bool  = false
+var thin_border: bool     = false
+var pulse_inactive: bool  = false  # true quando círculo pulse está na fase inativa
 
 var _elec_timer: float = 0.0
 
 
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint() or blocked_arcs.is_empty() or thin_border:
+	if Engine.is_editor_hint() or thin_border:
+		return
+	if blocked_arcs.is_empty() and not pulse_inactive:
 		return
 	_elec_timer += delta
 	if _elec_timer >= ELEC_INTERVAL:
@@ -35,6 +38,11 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO, circle_radius, 0.0, TAU, ARC_POINTS, free_color, width)
 		for arc in blocked_arcs:
 			_draw_arc_segment(arc.x, arc.y, BLOCKED_COLOR, width)
+		return
+
+	if pulse_inactive:
+		# Círculo inativo: eletricidade cobrindo o arco completo
+		_draw_electricity(0.0, 360.0)
 		return
 
 	if mirror_flipped:
