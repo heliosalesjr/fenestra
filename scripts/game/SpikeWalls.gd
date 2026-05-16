@@ -3,32 +3,33 @@ extends Node2D
 ## Desenhado dentro de um CanvasLayer — coordenadas de tela (pixels fixos),
 ## completamente independentes da posição/zoom da câmera.
 
-const VIEWPORT_W := 390.0
-const VIEWPORT_H := 844.0
-const DEPTH      := 14.0   # profundidade dos dentes para dentro da tela (px)
-const STEP       := 20.0   # espaçamento entre dentes (px)
+const VIEWPORT_W    := 390.0
+const VIEWPORT_H    := 844.0
+const ELEC_INTERVAL := 0.055  # segundos entre flickers
+
+var _elec_timer: float = 0.0
+
+
+func _process(delta: float) -> void:
+	_elec_timer += delta
+	if _elec_timer >= ELEC_INTERVAL:
+		_elec_timer = 0.0
+		queue_redraw()
 
 
 func _draw() -> void:
-	var wall  := Color(0.65, 0.08, 0.08, 0.75)
-	var teeth := Color(0.92, 0.18, 0.12, 0.9)
+	_draw_elec_wall(0.0)
+	_draw_elec_wall(VIEWPORT_W)
 
-	# ── Parede esquerda (x = 0) ────────────────────────────────────────────
-	draw_line(Vector2(0.0, 0.0), Vector2(0.0, VIEWPORT_H), wall, 3.0)
-	var pts_l := PackedVector2Array()
-	var y     := 0.0
-	while y <= VIEWPORT_H + STEP:
-		pts_l.append(Vector2(0.0, y))
-		pts_l.append(Vector2(DEPTH, y + STEP * 0.5))
-		y += STEP
-	draw_polyline(pts_l, teeth, 2.0, true)
 
-	# ── Parede direita (x = VIEWPORT_W) ────────────────────────────────────
-	draw_line(Vector2(VIEWPORT_W, 0.0), Vector2(VIEWPORT_W, VIEWPORT_H), wall, 3.0)
-	var pts_r := PackedVector2Array()
-	y = 0.0
-	while y <= VIEWPORT_H + STEP:
-		pts_r.append(Vector2(VIEWPORT_W, y))
-		pts_r.append(Vector2(VIEWPORT_W - DEPTH, y + STEP * 0.5))
-		y += STEP
-	draw_polyline(pts_r, teeth, 2.0, true)
+func _draw_elec_wall(x: float) -> void:
+	var n   := max(8, int(VIEWPORT_H / 6.0))
+	var pts := PackedVector2Array()
+	for i in range(n + 1):
+		var t  := float(i) / float(n)
+		var y  := t * VIEWPORT_H
+		var dx := randf_range(-7.0, 7.0) if (i > 0 and i < n) else 0.0
+		pts.append(Vector2(x + dx, y))
+	draw_polyline(pts, Color(0.9, 0.15, 0.05, 0.18), 11.0, true)
+	draw_polyline(pts, Color(1.0, 0.25, 0.05, 0.40),  5.0, true)
+	draw_polyline(pts, Color(1.0, 0.92, 0.88, 0.95),  1.5, true)
