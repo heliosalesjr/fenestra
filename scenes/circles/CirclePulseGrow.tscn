@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_pulsegrow"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo que combina pulso e crescimento.
+; Só pode ser pousado na fase ativa do pulso (arco verde).
+; Ao pousar, o anel começa a crescer em direção às paredes elétricas.
+; O player precisa ler o arco, esperar o pulso ativo E sair antes do círculo tocar as paredes.
+
+[node name="CirclePulseGrow" instance=ExtResource("1_base")]
+rotation_speed = 60.0
+circle_radius = 65.0
+blocked_arcs = Array[Vector2]([Vector2(30, 150)])
+pulse_enabled = true
+pulse_active_duration = 1.5
+pulse_inactive_duration = 0.9
+grow_enabled = true
+grow_speed = 8.0
+level_randomize = true

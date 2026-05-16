@@ -589,6 +589,13 @@ func _apply_random_arc() -> void:
 		rotation_speed = spd if randf() > 0.5 else -spd
 		shrink_speed   = randf_range(RAND_SHRINK_SPEED_MIN, RAND_SHRINK_SPEED_MAX)
 		blocked_arcs   = _random_arc_pattern()
+	elif grow_enabled and pulse_enabled:
+		circle_radius  = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
+		var spd := randf_range(RAND_PULSE_SPEED_MIN, RAND_PULSE_SPEED_MAX)
+		rotation_speed = spd if randf() > 0.5 else -spd
+		grow_speed     = randf_range(RAND_GROW_SPEED_MIN, RAND_GROW_SPEED_MAX)
+		blocked_arcs   = _random_arc_pattern()
+		_apply_random_pulse_timing()
 	elif grow_enabled:
 		circle_radius  = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
 		var spd := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
