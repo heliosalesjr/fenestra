@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_circle_pulsegrowsimple"]
+
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleBase.tscn" id="1_base"]
+
+; Círculo que combina pulso e crescimento sem arcos bloqueados.
+; O desafio é exclusivamente de timing: esperar a fase ativa e sair
+; antes que o círculo toque as paredes elétricas.
+
+[node name="CirclePulseGrowSimple" instance=ExtResource("1_base")]
+rotation_speed = 55.0
+circle_radius = 62.0
+blocked_arcs = Array[Vector2]([])
+pulse_enabled = true
+pulse_active_duration = 1.5
+pulse_inactive_duration = 0.9
+grow_enabled = true
+grow_speed = 8.0
+level_randomize = true
