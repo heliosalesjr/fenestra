@@ -242,18 +242,25 @@ fenestra/
 │       └── MainMenu.tscn              # pendente
 ├── scripts/
 │   ├── game/
-│   │   ├── Game.gd                    # lógica principal, input, checkpoint, câmera
+│   │   ├── Game.gd                    # lógica principal, input, checkpoint, câmera, paleta de cores
 │   │   └── SpikeWalls.gd              # desenho das paredes de spikes em screen space (CanvasLayer)
 │   ├── circles/
-│   │   ├── Circle.gd                  # rotação, arcos, pulso, orbiters
-│   │   └── ArcVisual.gd               # desenho de arcos via _draw()
+│   │   ├── Circle.gd                  # rotação, arcos, pulso, orbiters; set_ring_color(), set_thin_border()
+│   │   └── ArcVisual.gd               # desenho de arcos + eletricidade via _draw(); free_color, thin_border
 │   ├── entities/
-│   │   ├── Player.gd                  # movimento, colisão, morte
+│   │   ├── Player.gd                  # movimento, colisão, morte, respawn com animação de pulo
 │   │   ├── Orbiter.gd                 # órbita, fade_and_free
 │   │   └── Item.gd                    # item coletável: visual, collect(), sinal collected(type)
+│   ├── fx/
+│   │   └── PixelBurst.gd              # partículas quadradas no ponto de contato ao pousar
 │   ├── ui/
 │   │   └── UIOverlay.gd               # desenho do HUD + lógica de pause
 │   └── PhaseConfig.gd                 # configuração de fase como Resource — pendente
+├── assets/
+│   ├── audio/
+│   └── sprites/
+│       └── bat/
+│           └── BatMovement.png        # spritesheet 6 frames do morcego (player)
 ├── assets/
 │   ├── audio/
 │   └── sprites/
@@ -398,11 +405,65 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 
 | Estado | Canal visual | Descrição |
 |--------|-------------|-----------|
-| Arco livre | Cor da borda | Verde vibrante |
-| Arco bloqueado | Cor da borda | Cinza escuro |
+| Arco livre | Cor da borda | Cor da paleta do nível atual |
+| Arco bloqueado | Efeito de eletricidade | Fio branco quente + glow vermelho (sem arco sólido embaixo) |
 | Círculo ativo | Opacidade | 100% |
-| Círculo inativo | Opacidade | ~30% translúcido |
-| Player morto | Cor da bola | Vermelho |
+| Círculo inativo | Opacidade | ~30% translúcido + eletricidade cobrindo o arco completo |
+| Player morto | Cor do sprite | Vermelho (modulação HDR), aparece 0.12s após o início do respawn |
+| Checkpoint | Borda | 1px fino (vs 5px nos círculos normais) |
+
+### Paleta de cores por grupo de nível
+
+As cores dos círculos mudam a cada checkpoint (`bg_number > 0`). A paleta é atribuída em `Game._ready()` via `set_ring_color()` em cada `ArcVisual`:
+
+| Grupo | Cor |
+|-------|-----|
+| 0 (antes do 1º checkpoint) | Verde `(0.2, 0.9, 0.3)` |
+| 1 | Amarelo `(1.0, 0.9, 0.1)` |
+| 2 | Azul `(0.2, 0.5, 1.0)` |
+| 3 | Roxo `(0.7, 0.2, 1.0)` |
+| 4 | Laranja `(1.0, 0.5, 0.1)` |
+| 5 | Rosa `(1.0, 0.3, 0.7)` |
+| 6 | Branco `(0.9, 0.9, 0.9)` |
+| 7+ | Repete em loop |
+
+### Efeito de eletricidade nos arcos bloqueados
+
+Implementado em `ArcVisual._draw()`. Substitui o arco cinza sólido — a parte livre permanece como arco colorido sólido, e a parte bloqueada recebe apenas a eletricidade (sem fundo).
+
+Três camadas por span bloqueado:
+- Glow externo: vermelho escuro, 11px, α=0.18
+- Glow médio: vermelho vivo, 5px, α=0.40
+- Núcleo: branco quente `(1.0, 0.92, 0.88)`, 1.5px, α=0.95
+
+Animada por timer de 55ms (flicker ~18fps). Não aparece no editor (`Engine.is_editor_hint()`).
+Nos círculos mirror, a eletricidade cobre as zonas perigosas (complemento dos `blocked_arcs`).
+
+### Efeito PixelBurst no pouso
+
+Ao pousar com sucesso num círculo, `Player._on_arrived()` instancia um `PixelBurst` no ponto exato de contato (borda do círculo, na direção de chegada). O nó se auto-destrói após a animação.
+
+- 12 partículas quadradas (4px), direções aleatórias (360°)
+- Cores: variações claro/escuro da `free_color` do círculo tocado
+- Velocidade: 120–300px/s com fricção (×0.88/frame)
+- Duração: 0.4s, fade quadrático
+
+### Player — sprite e animação
+
+O player usa um sprite de morcego (`assets/sprites/bat/BatMovement.png`, 6 frames, spritesheet horizontal) com `AnimationPlayer` rodando a animação `idle` em loop.
+
+- `flip_h` é atualizado em `move_to()`: `true` se o próximo círculo está à direita, `false` se à esquerda
+- Quando nenhuma textura está atribuída ao `Sprite2D`, o `_draw()` renderiza o círculo amarelo como fallback
+- Cor normal: modulate `Color(6.345, 6.345, 6.345)` (branco brilhante HDR)
+- Cor de morte: modulate `Color(8.0, 2.5, 2.5)` (vermelho HDR), ativada 0.12s após início do respawn
+- Ao pousar no checkpoint: modulate volta ao branco via `attach_to_circle()`
+
+### Animação de respawn
+
+Ao morrer, após 0.35s de delay:
+1. Player sobe 110px (ease out, 0.22s)
+2. Player cai até o checkpoint (ease in, 0.48s)
+3. `attach_to_circle()` é chamado ao chegar — modulate volta ao normal
 
 ### Linhas de conexão
 Linhas cinzas semi-transparentes conectam os círculos na ordem da sequência.
