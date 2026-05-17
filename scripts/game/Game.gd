@@ -9,10 +9,11 @@ extends Node2D
 @export var life_weight:   int = 20
 @export var shield_weight: int = 10
 
-@onready var player: Node2D       = $Player
-@onready var _camera: Camera2D    = $Camera2D
-@onready var _ui: Control         = $UI/TopBar
-@onready var _spike_walls: Node2D = $SpikeLayer/SpikeWalls
+@onready var player: Node2D        = $Player
+@onready var _camera: Camera2D     = $Camera2D
+@onready var _ui: Control          = $UI/TopBar
+@onready var _spike_walls: Node2D  = $SpikeLayer/SpikeWalls
+@onready var _background: Node2D   = $BackgroundLayer/Background
 
 var circles: Array[Node2D] = []
 var _items:  Array[Node2D] = []
@@ -297,6 +298,9 @@ func _jump_to_next() -> void:
 
 func _on_player_landed(circle: Node2D) -> void:
 	current_index = circles.find(circle)
+	var arc_visual := circle.get_node_or_null("RotationRoot/ArcVisual")
+	if arc_visual:
+		_background.set_tint(arc_visual.free_color)
 	_spike_walls.visible = circle.get("drift_enabled") or circle.get("grow_enabled")
 	if circle.get("mirror_mode"):
 		circle.call("flip_mirror")

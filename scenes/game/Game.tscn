@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://cb73n3p12qvfm"]
+[gd_scene load_steps=21 format=3 uid="uid://cb73n3p12qvfm"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn" id="2_arc"]
@@ -19,6 +19,7 @@
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftMirror.tscn" id="17_driftmirror"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CirclePulseGrowSimple.tscn" id="18_pulsegrowsimple"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CirclePulseGrow.tscn" id="19_pulsegrow"]
+[ext_resource type="Script" path="res://scripts/background/Background.gd" id="20_background"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
@@ -243,6 +244,12 @@ position = Vector2(115, -23850)
 [node name="CP14" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -24300)
 bg_number = 15
+
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="Background" type="Node2D" parent="BackgroundLayer"]
+script = ExtResource("20_background")
 
 [node name="SpikeLayer" type="CanvasLayer" parent="."]
 

@@ -1,3 +1,4 @@
 res://scripts/circles/ArcVisual.gd
 res://scripts/circles/Circle.gd
 res://scripts/game/SpikeWalls.gd
+res://scripts/game/Game.gd
