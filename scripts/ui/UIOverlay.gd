@@ -28,6 +28,9 @@ const MAX_LIVES    := 3
 var lives: int     = MAX_LIVES
 var _game_over: bool = false
 
+var _clock_active:   bool  = false
+var _clock_progress: float = 1.0
+
 
 func _ready() -> void:
 	$PauseBtn.pressed.connect(_on_pause_btn_pressed)
@@ -37,6 +40,22 @@ func _ready() -> void:
 
 func set_lives(n: int) -> void:
 	lives = n
+	queue_redraw()
+
+
+func show_clock_bar() -> void:
+	_clock_active   = true
+	_clock_progress = 1.0
+	queue_redraw()
+
+
+func update_clock_bar(progress: float) -> void:
+	_clock_progress = progress
+	queue_redraw()
+
+
+func hide_clock_bar() -> void:
+	_clock_active = false
 	queue_redraw()
 
 
@@ -53,6 +72,8 @@ func _draw() -> void:
 	_draw_lives()
 	_draw_powerups()
 	_draw_pause()
+	if _clock_active:
+		_draw_clock_bar()
 	if _game_over:
 		_draw_game_over()
 
@@ -103,6 +124,25 @@ func _draw_magnet(c: Vector2) -> void:
 	draw_arc(Vector2(c.x, bot), arm, 0.0, PI, 14, col, 2.5)
 	draw_line(Vector2(c.x - arm,       top), Vector2(c.x - arm*0.22, top), Color(0.9, 0.2, 0.2, 0.9), 3.5, true)
 	draw_line(Vector2(c.x + arm*0.22, top), Vector2(c.x + arm,       top), Color(0.3, 0.55, 1.0, 0.9), 3.5, true)
+
+
+func _draw_clock_bar() -> void:
+	const BAR_Y  := BAR_H
+	const BAR_HT := 8.0
+
+	draw_rect(Rect2(0.0, BAR_Y, VIEWPORT_W, BAR_HT), Color(0.0, 0.0, 0.0, 0.5))
+
+	var col: Color
+	if _clock_progress > 0.5:
+		col = Color(0.2, 0.9, 0.3)
+	elif _clock_progress > 0.25:
+		col = Color(1.0, 0.85, 0.1)
+	else:
+		col = Color(1.0, 0.22, 0.22)
+		if _clock_progress < 0.15:
+			col.a = 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.012)
+
+	draw_rect(Rect2(0.0, BAR_Y, VIEWPORT_W * _clock_progress, BAR_HT), col)
 
 
 func _draw_pause() -> void:

@@ -8,6 +8,8 @@ extends Node2D
 @export var coin_weight:   int = 70
 @export var life_weight:   int = 20
 @export var shield_weight: int = 10
+## bg_numbers dos níveis que devem ter relógio antes do primeiro círculo.
+@export var clock_before_levels: Array[int] = [2, 3, 4]
 
 @onready var player: Node2D        = $Player
 @onready var _camera: Camera2D     = $Camera2D
@@ -23,10 +25,16 @@ var last_checkpoint_index: int = 0
 var lives: int = 99
 var _first_walls_index: int = -1   # primeiro círculo com drift ou grow (ativa spikes)
 
+var _clock_active:             bool  = false
+var _clock_time_left:          float = 0.0
+var _clock_start_circle_index: int   = -1
+
 const ITEM_COLLECT_RADIUS := 20.0
 const ITEM_COIN   := 0
 const ITEM_LIFE   := 1
 const ITEM_SHIELD := 2
+
+const CLOCK_DURATION := 18.0
 
 const RING_PALETTE: Array[Color] = [
 	Color(0.2,  0.9,  0.3,  1.0),  # verde
@@ -88,6 +96,7 @@ func _process(delta: float) -> void:
 	_check_grow_wall()
 	_update_item_positions()
 	_check_items()
+	_update_clock(delta)
 
 
 # ─── Câmera ──────────────────────────────────────────────────────────────────
@@ -175,12 +184,32 @@ func _check_grow_wall() -> void:
 # ─── Itens ───────────────────────────────────────────────────────────────────
 
 func _spawn_items() -> void:
-	var scene := preload("res://scenes/entities/Item.tscn")
+	var item_scene  := preload("res://scenes/entities/Item.tscn")
+	var clock_scene := preload("res://scenes/entities/ClockItem.tscn")
+
+	# Identifica gaps que devem ter relógio (gap i = entre circles[i] e circles[i+1])
+	var clock_gaps: Dictionary = {}
+	for i in circles.size():
+		var bg_n: int = circles[i].get("bg_number")
+		if bg_n > 0 and clock_before_levels.has(bg_n) and i > 0:
+			var gap_idx := i - 1
+			clock_gaps[gap_idx] = true
+			var mid := (circles[gap_idx].position + circles[i].position) * 0.5
+			var clock_item: Node2D = clock_scene.instantiate()
+			clock_item.position = mid
+			clock_item.set_meta("circle_a", circles[gap_idx])
+			clock_item.set_meta("circle_b", circles[i])
+			add_child(clock_item)
+			clock_item.connect("collected", _on_clock_collected)
+			_items.append(clock_item)
+
 	for i in range(circles.size() - 1):
+		if clock_gaps.has(i):
+			continue
 		if randf() > item_spawn_chance:
 			continue
 		var mid := (circles[i].position + circles[i + 1].position) * 0.5
-		var item: Node2D = scene.instantiate()
+		var item: Node2D = item_scene.instantiate()
 		item.set("item_type", _random_item_type())
 		item.position = mid
 		item.set_meta("circle_a", circles[i])
@@ -233,6 +262,36 @@ func _random_item_type() -> int:
 		return ITEM_LIFE
 	else:
 		return ITEM_SHIELD
+
+
+# ─── Relógio ─────────────────────────────────────────────────────────────────
+
+func _on_clock_collected() -> void:
+	_clock_start_circle_index = current_index + 1
+	_start_clock()
+
+
+func _start_clock() -> void:
+	_clock_active    = true
+	_clock_time_left = CLOCK_DURATION
+	_ui.show_clock_bar()
+
+
+func _stop_clock() -> void:
+	if not _clock_active:
+		return
+	_clock_active = false
+	_ui.hide_clock_bar()
+
+
+func _update_clock(delta: float) -> void:
+	if not _clock_active:
+		return
+	_clock_time_left -= delta
+	_ui.update_clock_bar(_clock_time_left / CLOCK_DURATION)
+	if _clock_time_left <= 0.0:
+		_stop_clock()
+		player.force_die("clock")
 
 
 func _on_item_collected(type: int) -> void:
@@ -328,6 +387,8 @@ func _on_player_landed(circle: Node2D) -> void:
 		circle.call("start_reversing")
 	if circle.get("bg_number") > 0:
 		last_checkpoint_index = current_index
+		if _clock_active and current_index > _clock_start_circle_index:
+			_stop_clock()
 
 
 func _on_shrink_exploded() -> void:
@@ -368,6 +429,7 @@ func _disconnect_poison(circle: Node2D) -> void:
 
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
+	_stop_clock()
 	var cur := circles[current_index]
 	if cur.get("orbiter_chaser"):
 		cur.call("release_chasers")
