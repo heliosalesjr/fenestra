@@ -236,7 +236,8 @@ fenestra/
 │   ├── entities/
 │   │   ├── Player.tscn                # personagem/bolinha (sem Camera2D)
 │   │   ├── Orbiter.tscn               # esfera orbitante
-│   │   └── Item.tscn                  # item coletável (moeda, vida, escudo)
+│   │   ├── Item.tscn                  # item coletável (moeda, vida, escudo)
+│   │   └── ClockItem.tscn             # modificador de nível: limite de tempo
 │   └── ui/
 │       ├── UI.tscn                    # HUD provisório (vidas, powerups, pause)
 │       └── MainMenu.tscn              # pendente
@@ -250,7 +251,8 @@ fenestra/
 │   ├── entities/
 │   │   ├── Player.gd                  # movimento, colisão, morte, respawn com animação de pulo
 │   │   ├── Orbiter.gd                 # órbita, fade_and_free
-│   │   └── Item.gd                    # item coletável: visual, collect(), sinal collected(type)
+│   │   ├── Item.gd                    # item coletável: visual, collect(), sinal collected(type)
+│   │   └── ClockItem.gd               # modificador relógio: visual bob, collect(), sinal collected
 │   ├── fx/
 │   │   └── PixelBurst.gd              # partículas quadradas no ponto de contato ao pousar
 │   ├── ui/
@@ -382,11 +384,13 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - Mantém `circle_sequence: Array[NodePath]` (configurado no editor)
 - `_draw()`: desenha linhas de conexão entre círculos consecutivos
 - Input: toque/clique → libera chasers do círculo atual → `player.move_to(next_circle)`
-- `_on_player_landed`: atualiza `current_index`; handles mirror/chasers/shrink/drift/grow/reverse; spikes visíveis **apenas** se o círculo atual tem `drift_enabled` ou `grow_enabled`; salva checkpoint se `bg_number > 0`
-- `_on_player_died`: libera chasers/shrink/drift/grow/reverse; decrementa `lives`; se 0 → `show_game_over()`; senão respawn no checkpoint; chama `_reset_circles_after_checkpoint()`
+- `_on_player_landed`: atualiza `current_index`; handles mirror/chasers/shrink/drift/grow/reverse; spikes visíveis **apenas** se o círculo atual tem `drift_enabled` ou `grow_enabled`; salva checkpoint se `bg_number > 0`; para o relógio se o player chegou no próximo checkpoint após o nível cronometrado
+- `_on_player_died`: para o relógio; libera chasers/shrink/drift/grow/reverse; decrementa `lives`; se 0 → `show_game_over()`; senão respawn no checkpoint; chama `_reset_circles_after_checkpoint()`; se o nível de respawn tem relógio → `_spawn_respawn_clock()`
 - `_on_shrink_exploded` / `_on_drift_exploded` / `_on_grow_exploded`: chamam `player.force_die(reason)`
 - `_follow_drift_circle()`: sincroniza player com círculo drift em movimento; verifica colisão câmera-aware; `queue_redraw()` durante deriva e retorno
 - `_check_grow_wall()`: a cada frame, verifica se `_grow_radius` do círculo atual toca borda da tela (world space = `cam_pos.x ± VIEWPORT_W/2/zoom`); chama `trigger_grow_explode()` se necessário
+- `_update_clock(delta)`: decrementa `_clock_time_left`; atualiza barra via `_ui.update_clock_bar(progress)`; chama `player.force_die("clock")` quando zera
+- `_spawn_respawn_clock()`: cria um `ClockItem` entre círculo[last_checkpoint] e círculo[last_checkpoint+1]; destrói o item anterior se ainda existia
 - `SpikeLayer/SpikeWalls` (`SpikeWalls.gd`): `Node2D` dentro de `CanvasLayer` (layer=1); desenha paredes de spikes em screen space (x=0 e x=390), fixas e independentes da câmera; visíveis **apenas** nos círculos com `drift_enabled` ou `grow_enabled` (toggleado a cada `_on_player_landed`)
 - **Controla a Camera2D** via `_update_camera(delta)` a cada frame (ver seção Câmera)
 
@@ -396,6 +400,7 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - Esquerda: ícones de vida (3 no total; preenchidos = vidas restantes, contorno = perdidas)
 - Centro: 3 ícones de powerup (escudo, moeda, ímã) — visuais provisórios
 - Direita: ícone de pause `||`; `PauseBtn` (Button flat invisível) captura o toque e chama `get_tree().paused`
+- Barra de tempo do relógio: 8px imediatamente abaixo da top bar; visível apenas quando `_clock_active = true`; verde → amarelo → vermelho; pisca quando < 15% restante
 
 ---
 
@@ -721,6 +726,7 @@ Itens coletáveis aparecem entre os círculos da sequência, posicionados no pon
 - `item_spawn_chance: float = 0.4` — probabilidade de aparecer entre cada par de círculos (0.0 = nunca, 1.0 = sempre)
 - Pesos por tipo: `coin_weight=70`, `life_weight=20`, `shield_weight=10`
 - Gerados uma vez em `_spawn_items()` chamado no `_ready()` — posições iniciais são os midpoints entre círculos consecutivos
+- Gaps reservados para modificadores de nível (ex: relógio) **não** recebem itens aleatórios
 
 ### Atualização de posição
 - A cada frame, `_update_item_positions()` relê `(circle_a.position + circle_b.position) / 2`
@@ -744,6 +750,58 @@ Itens coletáveis aparecem entre os círculos da sequência, posicionados no pon
 @export var item_type: Type = Type.COIN   # enum Type { COIN, LIFE, SHIELD }
 signal collected(type: int)
 func collect() -> void   # chamado por Game.gd ao detectar coleta
+```
+
+---
+
+## Modificadores de nível
+
+Modificadores são elementos que aparecem **antes do primeiro círculo de um nível** e impõem uma restrição durante toda a duração daquele nível (3 círculos). Diferente dos itens coletáveis, eles não são sorteados — aparecem deterministicamente nos níveis configurados e o gap que ocupam não recebe itens aleatórios.
+
+O mecanismo de coleta é idêntico ao dos itens: o modificador fica posicionado no midpoint entre dois círculos e é coletado quando o player passa por ele durante o voo.
+
+### Relógio (`ClockItem`)
+
+O primeiro modificador implementado. Impõe um **limite de tempo** para completar o nível.
+
+**Visual:** ícone âmbar (`Color(1.0, 0.72, 0.15)`) desenhado via `_draw()` — anel circular, 4 marcadores de hora, ponteiros das 12 e das 3. Animação de bob suave (±4px, 2.5 rad/s).
+
+**Posicionamento inicial:** no gap entre o último círculo do nível anterior e o primeiro círculo do nível com relógio. Configurado via `clock_before_levels: Array[int]` em `Game.gd` (valores = `bg_number` dos níveis alvo). Para testes: níveis 2, 3 e 4.
+
+**Fluxo:**
+1. Player coleta o ícone durante o voo → countdown de **8s** inicia (`CLOCK_DURATION`)
+2. Barra de tempo aparece imediatamente abaixo da top bar (8px de altura, largura total)
+3. Player completa os 3 círculos do nível e pousa no próximo checkpoint → relógio para (sucesso)
+4. Tempo zera → `player.force_die("clock")`
+
+**Respawn com relógio:**
+- Ao morrer (seja pelo relógio ou por qualquer outro motivo) dentro de um nível com relógio, o player respawna no primeiro círculo do nível normalmente
+- Um novo ícone de relógio é gerado no gap entre o **1º e o 2º círculo** do nível (já que o player reapparece no 1º)
+- O countdown só reinicia quando o player coleta esse novo ícone — o mecanismo de início se mantém idêntico
+- Se o player morrer novamente antes de coletar o novo ícone, o item anterior é destruído e um novo é gerado no mesmo lugar
+
+**Barra de tempo (`UIOverlay`):**
+- Posição: `y = 62px` (logo abaixo da top bar), altura 8px, largura total 390px
+- Fundo escuro semi-transparente; preenchimento drena da direita para a esquerda
+- Cores: verde (`> 50%`) → amarelo (`25–50%`) → vermelho (`< 25%`)
+- Pisca (α oscila via `sin`) quando `< 15%` do tempo restante
+- API: `show_clock_bar()`, `update_clock_bar(progress: float)`, `hide_clock_bar()`
+
+**ClockItem.gd — API:**
+```gdscript
+signal collected          # sem parâmetros; conectado a Game._on_clock_collected()
+var _active: bool         # false após coleta, bloqueia collect() duplo
+func collect() -> void    # desativa, emite sinal, anima saída (scale 1.6× + fade 0.15s)
+```
+
+**Game.gd — vars de estado:**
+```gdscript
+@export var clock_before_levels: Array[int] = [2, 3, 4]  # bg_numbers dos níveis alvo
+const CLOCK_DURATION := 8.0
+var _clock_active: bool = false
+var _clock_time_left: float = 0.0
+var _clock_start_circle_index: int = -1  # índice do 1º círculo do nível cronometrado
+var _respawn_clock_item: Node2D = null   # referência ao item gerado no respawn
 ```
 
 ---
@@ -837,7 +895,8 @@ func collect() -> void   # chamado por Game.gd ao detectar coleta
 23. ✅ Sistema de itens coletáveis — moedas, vidas e escudos gerados probabilisticamente entre círculos; posição atualizada a cada frame para seguir círculos drift; coleta por distância de segmento
 24. ✅ Círculo de deriva com arco (`CircleDriftArc.tscn`) — nível 11 implementado (deriva lateral + arco bloqueado, sem pulso)
 25. ✅ Círculo de deriva com espelho (`CircleDriftMirror.tscn`) — nível 12 implementado (deriva lateral + inversão de arcos a cada pouso)
-26. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
+26. ✅ Modificador relógio (`ClockItem`) — aparece antes dos níveis configurados; countdown de 8s com barra de tempo; respawn regenera o item no 1º gap do nível
+27. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
 27. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
 28. HUD definitivo com score e combo (substituir UI provisória)
 29. Implementar efeitos dos itens coletados (score de moedas, restaurar vida, ativar escudo)
