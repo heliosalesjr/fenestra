@@ -25,16 +25,17 @@ var last_checkpoint_index: int = 0
 var lives: int = 99
 var _first_walls_index: int = -1   # primeiro círculo com drift ou grow (ativa spikes)
 
-var _clock_active:             bool  = false
-var _clock_time_left:          float = 0.0
-var _clock_start_circle_index: int   = -1
+var _clock_active:             bool   = false
+var _clock_time_left:          float  = 0.0
+var _clock_start_circle_index: int    = -1
+var _respawn_clock_item:       Node2D = null
 
 const ITEM_COLLECT_RADIUS := 20.0
 const ITEM_COIN   := 0
 const ITEM_LIFE   := 1
 const ITEM_SHIELD := 2
 
-const CLOCK_DURATION := 18.0
+const CLOCK_DURATION := 8.0
 
 const RING_PALETTE: Array[Color] = [
 	Color(0.2,  0.9,  0.3,  1.0),  # verde
@@ -267,6 +268,7 @@ func _random_item_type() -> int:
 # ─── Relógio ─────────────────────────────────────────────────────────────────
 
 func _on_clock_collected() -> void:
+	_respawn_clock_item = null
 	_clock_start_circle_index = current_index + 1
 	_start_clock()
 
@@ -458,6 +460,26 @@ func _on_player_died(reason: String) -> void:
 	_spike_walls.visible = cp_circle.get("drift_enabled") or cp_circle.get("grow_enabled")
 	_reset_circles_after_checkpoint()
 	player.respawn(circles[last_checkpoint_index])
+	if clock_before_levels.has(cp_circle.get("bg_number")):
+		_spawn_respawn_clock()
+
+
+func _spawn_respawn_clock() -> void:
+	var next_idx := last_checkpoint_index + 1
+	if next_idx >= circles.size():
+		return
+	if is_instance_valid(_respawn_clock_item):
+		_items.erase(_respawn_clock_item)
+		_respawn_clock_item.queue_free()
+	var clock_scene := preload("res://scenes/entities/ClockItem.tscn")
+	var mid := (circles[last_checkpoint_index].position + circles[next_idx].position) * 0.5
+	_respawn_clock_item = clock_scene.instantiate()
+	_respawn_clock_item.position = mid
+	_respawn_clock_item.set_meta("circle_a", circles[last_checkpoint_index])
+	_respawn_clock_item.set_meta("circle_b", circles[next_idx])
+	add_child(_respawn_clock_item)
+	_respawn_clock_item.connect("collected", _on_clock_collected)
+	_items.append(_respawn_clock_item)
 
 
 func _reset_circles_after_checkpoint() -> void:
