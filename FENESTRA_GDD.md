@@ -181,7 +181,7 @@ Cada nível tem **3 a 5 pulos** (círculos intermediários) entre o início e o 
 - **Círculo de partida:** sem arcos bloqueados, sem pulso, sem orbiters. Ponto de saída puro.
 - **Círculos intermediários:** combinação de arcos, pulso e orbiters conforme o nível.
 - **Checkpoint:** sem perigo. Ponto de save. Ao chegar aqui, o próximo nível começa.
-- Ao morrer: reinicia do círculo de partida do nível atual (sem vidas, estilo arcade).
+- Ao morrer: perde uma vida e respawna no último checkpoint atingido. 3 vidas por run; ao zerar, tela de game over (tap to restart).
 
 ### Progressão de dificuldade por nível
 
@@ -516,7 +516,7 @@ Anel fino desenhado em `Circle.gd._draw()`, ligeiramente fora do `circle_radius`
 - Multiplicador de combo por pousos consecutivos
 - Score exibido no topo durante o jogo
 - High score salvo localmente (`FileAccess`)
-- Sem vidas — cada erro reinicia o nível atual
+- 3 vidas por run — ao zerar, tela de game over (ver Sistema de vidas)
 
 ---
 
