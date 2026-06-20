@@ -22,7 +22,8 @@ var _items:  Array[Node2D] = []
 var _player_prev_pos: Vector2 = Vector2.ZERO
 var current_index: int = 0
 var last_checkpoint_index: int = 0
-var lives: int = 99
+const MAX_LIVES := 3
+var lives: int = MAX_LIVES
 var _first_walls_index: int = -1   # primeiro círculo com drift ou grow (ativa spikes)
 
 var _clock_active:             bool   = false
