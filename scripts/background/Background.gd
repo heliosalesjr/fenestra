@@ -61,8 +61,6 @@ func set_tint(color: Color) -> void:
 
 
 func _process(delta: float) -> void:
-	var t := Time.get_ticks_msec() * 0.001
-
 	# Drift das nuvens
 	for cloud in _clouds:
 		cloud["pos"].x += float(cloud["speed"]) * delta
