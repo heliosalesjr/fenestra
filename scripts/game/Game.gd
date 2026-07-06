@@ -484,10 +484,15 @@ func _spawn_respawn_clock() -> void:
 
 
 func _reset_circles_after_checkpoint() -> void:
+	# Fim do nível atual: até o próximo círculo de checkpoint (ou o fim da sequência).
+	var level_end := circles.size()
+	for i in range(last_checkpoint_index + 1, circles.size()):
+		if circles[i].get("bg_number") > 0:
+			level_end = i
+			break
+
 	for i in range(last_checkpoint_index + 1, circles.size()):
 		var c := circles[i]
-		if c.get("orbiter_count") > 0:
-			c.call("reset_orbiters")
 		if c.get("mirror_mode"):
 			c.call("reset_mirror")
 		if c.get("shrink_enabled"):
@@ -500,3 +505,7 @@ func _reset_circles_after_checkpoint() -> void:
 			c.call("stop_poisoning")
 		if c.get("reverse_enabled"):
 			c.call("stop_reversing")
+		if i < level_end and c.get("level_randomize"):
+			c.call("randomize_level")
+		if c.get("orbiter_count") > 0:
+			c.call("reset_orbiters")

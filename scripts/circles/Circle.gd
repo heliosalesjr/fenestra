@@ -577,6 +577,13 @@ func is_landing_valid(world_angle_deg: float) -> bool:
 # Randomização de nível
 # ---------------------------------------------------------------------------
 
+## Re-sorteia os parâmetros aleatórios deste círculo (raio, velocidade, padrão de
+## arcos etc). Chamado pelo Game ao reiniciar o nível após uma morte.
+func randomize_level() -> void:
+	if level_randomize:
+		_apply_random_arc()
+
+
 func _apply_random_arc() -> void:
 	circle_radius = randf_range(RAND_RADIUS_MIN, RAND_RADIUS_MAX)
 	var speed := randf_range(RAND_SPEED_MIN, RAND_SPEED_MAX)
