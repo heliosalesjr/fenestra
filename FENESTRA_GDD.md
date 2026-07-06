@@ -746,7 +746,7 @@ Itens coletáveis aparecem entre os círculos da sequência, posicionados no pon
 |------|-----------|-----|--------|
 | Moeda | `ITEM_COIN = 0` | Amarelo-ouro | TODO: adicionar ao score |
 | Vida | `ITEM_LIFE = 1` | Vermelho-rosa | TODO: restaurar vida |
-| Escudo | `ITEM_SHIELD = 2` | Azul | TODO: ativar escudo |
+| Escudo | `ITEM_SHIELD = 2` | Azul | ✅ implementado — anula a próxima morte |
 
 ### Item.gd — exports e API
 ```gdscript
@@ -754,6 +754,16 @@ Itens coletáveis aparecem entre os círculos da sequência, posicionados no pon
 signal collected(type: int)
 func collect() -> void   # chamado por Game.gd ao detectar coleta
 ```
+
+### Escudo — implementação
+
+O escudo intercepta a morte no ponto único por onde toda morte passa: `Player._die()`.
+
+- Ao coletar (`Game._on_item_collected(ITEM_SHIELD)`): `player.set_shield(true)` + `_ui.set_shield(true)` (ícone acende na barra superior)
+- Na próxima chamada a `_die(reason)` (qualquer causa — arco bloqueado, orbiter, chaser, shrink/drift/grow/poison, relógio): `Player._try_shield_save()` consome o escudo, concede **1s de invencibilidade** (`SHIELD_INVULN_DURATION`) e emite `shield_broken` em vez de matar o player. `Game._on_shield_broken()` apaga o ícone na UI.
+- Durante a invencibilidade, novas chamadas a `_die()` são ignoradas automaticamente (evita morrer de novo no mesmo frame pelo mesmo orbiter/chaser); o sprite pisca em azul (`SHIELD_FLASH_MODULATE` alternando com o modulate neutro) e o círculo de fallback (sem textura) fica azul
+- Se a morte evitada era um pouso inválido (`_on_arrived`), o player pousa normalmente no círculo de destino (`_try_shield_save()` substitui a checagem de `is_landing_valid()`) — o escudo "força" o pouso
+- O escudo **persiste através de respawns** (não é afetado por `respawn()`/`attach_to_circle()`); só é consumido por uma morte real
 
 ---
 
@@ -902,5 +912,5 @@ var _respawn_clock_item: Node2D = null   # referência ao item gerado no respawn
 27. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
 27. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
 28. HUD definitivo com score e combo (substituir UI provisória)
-29. Implementar efeitos dos itens coletados (score de moedas, restaurar vida, ativar escudo)
+29. Implementar efeitos dos itens coletados: ✅ escudo (anula a próxima morte + 1s de invencibilidade); TODO: score de moedas, restaurar vida
 30. Testar em dispositivo real desde cedo

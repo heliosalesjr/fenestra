@@ -2,30 +2,49 @@ extends Node2D
 
 signal landed_on(circle: Node2D)
 signal player_died(reason: String)
+signal shield_broken()
 
 enum State { ON_CIRCLE, MOVING, DEAD }
 
 @export var player_radius: float = 12.0
 @export var player_color: Color  = Color(1.0, 0.85, 0.2)
 @export var dead_color: Color    = Color(1.0, 0.2, 0.2)
+@export var shield_color: Color  = Color(0.35, 0.75, 1.0)
 @export var move_duration: float = 0.14
+
+const SHIELD_INVULN_DURATION := 1.0
+const SHIELD_FLASH_MODULATE  := Color(2.2, 5.2, 8.5, 1.0)   # bloom azulado, mesmo truque HDR do resto do sprite
+const NEUTRAL_MODULATE       := Color(6.34502, 6.34502, 6.34502, 1.0)
 
 var state: State = State.ON_CIRCLE
 var current_circle: Node2D = null
 var destination_circle: Node2D = null
 var _active_tween: Tween = null
+var has_shield: bool = false
+var _invuln_timer: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
+@onready var shield_bubble: Node2D = $ShieldBubble
 
 
 func _draw() -> void:
 	if sprite.texture != null:
 		return
 	var color := dead_color if state == State.DEAD else player_color
+	if _invuln_timer > 0.0:
+		color = shield_color
 	draw_circle(Vector2.ZERO, player_radius, color)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _invuln_timer > 0.0:
+		_invuln_timer = maxf(0.0, _invuln_timer - delta)
+		var blink := sin(Time.get_ticks_msec() * 0.03) > 0.0
+		sprite.modulate = SHIELD_FLASH_MODULATE if blink else NEUTRAL_MODULATE
+		queue_redraw()
+		if _invuln_timer == 0.0:
+			sprite.modulate = NEUTRAL_MODULATE
+
 	if state == State.MOVING and destination_circle:
 		_check_orbiter_collision()
 	elif state == State.ON_CIRCLE and current_circle:
@@ -37,8 +56,29 @@ func attach_to_circle(circle: Node2D) -> void:
 	destination_circle = null
 	state = State.ON_CIRCLE
 	global_position = circle.global_position
-	sprite.modulate = Color(6.34502, 6.34502, 6.34502, 1.0)
+	if _invuln_timer <= 0.0:
+		sprite.modulate = NEUTRAL_MODULATE
 	queue_redraw()
+
+
+## Ativa/desativa o escudo coletado. Consumido automaticamente na próxima morte.
+func set_shield(active: bool) -> void:
+	has_shield = active
+	shield_bubble.set_active(active)
+
+
+## Tenta salvar o player de uma morte usando o escudo ou a invencibilidade
+## concedida por ele. Retorna true se a morte deve ser ignorada.
+func _try_shield_save() -> bool:
+	if _invuln_timer > 0.0:
+		return true
+	if not has_shield:
+		return false
+	has_shield = false
+	_invuln_timer = SHIELD_INVULN_DURATION
+	shield_broken.emit()
+	shield_bubble.set_active(false)
+	return true
 
 
 func move_to(target: Node2D) -> void:
@@ -84,7 +124,7 @@ func _on_arrived() -> void:
 		return
 	var from_pos := current_circle.global_position if current_circle else global_position
 	var approach_angle_deg := rad_to_deg((from_pos - circle.global_position).angle())
-	if circle.is_landing_valid(approach_angle_deg):
+	if circle.is_landing_valid(approach_angle_deg) or _try_shield_save():
 		var outward_dir := (from_pos - circle.global_position).normalized()
 		var radius: float = circle.get("circle_radius")
 		var arc_visual := circle.get_node_or_null("RotationRoot/ArcVisual")
@@ -212,6 +252,8 @@ func force_die(reason: String) -> void:
 
 
 func _die(reason: String) -> void:
+	if _try_shield_save():
+		return
 	if _active_tween:
 		_active_tween.kill()
 		_active_tween = null

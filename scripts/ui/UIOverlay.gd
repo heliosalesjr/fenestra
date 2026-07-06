@@ -30,6 +30,7 @@ var _game_over: bool = false
 
 var _clock_active:   bool  = false
 var _clock_progress: float = 1.0
+var _shield_active:  bool  = false
 
 
 func _ready() -> void:
@@ -56,6 +57,11 @@ func update_clock_bar(progress: float) -> void:
 
 func hide_clock_bar() -> void:
 	_clock_active = false
+	queue_redraw()
+
+
+func set_shield(active: bool) -> void:
+	_shield_active = active
 	queue_redraw()
 
 
@@ -104,8 +110,13 @@ func _draw_shield(c: Vector2) -> void:
 		c + Vector2(-r*0.78,  r*0.28),
 		c + Vector2(-r*0.78, -r*0.35),
 	])
-	draw_colored_polygon(pts, Color(SHIELD_COLOR, 0.18))
-	draw_polyline(pts + PackedVector2Array([pts[0]]), Color(SHIELD_COLOR, 0.82), 1.5)
+	if _shield_active:
+		draw_arc(c, r + 3.5, 0.0, TAU, 20, Color(SHIELD_COLOR, 0.30), 3.0)
+		draw_colored_polygon(pts, Color(SHIELD_COLOR, 0.85))
+		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(1.0, 1.0, 1.0, 0.95), 2.0)
+	else:
+		draw_colored_polygon(pts, Color(SHIELD_COLOR, 0.18))
+		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(SHIELD_COLOR, 0.82), 1.5)
 
 
 func _draw_coin(c: Vector2) -> void:

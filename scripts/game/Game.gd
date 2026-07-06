@@ -10,6 +10,9 @@ extends Node2D
 @export var shield_weight: int = 10
 ## bg_numbers dos níveis que devem ter relógio antes do primeiro círculo.
 @export var clock_before_levels: Array[int] = [2, 3, 4]
+## Gaps que sempre recebem um escudo garantido (índice = circles[i] → circles[i+1]).
+## Usado para testar a mecânica de escudo sem depender do sorteio aleatório.
+@export var forced_shield_gaps: Array[int] = [0, 4]
 
 @onready var player: Node2D        = $Player
 @onready var _camera: Camera2D     = $Camera2D
@@ -78,6 +81,7 @@ func _ready() -> void:
 
 	player.player_died.connect(_on_player_died)
 	player.landed_on.connect(_on_player_landed)
+	player.shield_broken.connect(_on_shield_broken)
 
 	if circles.size() > 0:
 		player.attach_to_circle(circles[0])
@@ -208,11 +212,12 @@ func _spawn_items() -> void:
 	for i in range(circles.size() - 1):
 		if clock_gaps.has(i):
 			continue
-		if randf() > item_spawn_chance:
+		var forced := forced_shield_gaps.has(i)
+		if not forced and randf() > item_spawn_chance:
 			continue
 		var mid := (circles[i].position + circles[i + 1].position) * 0.5
 		var item: Node2D = item_scene.instantiate()
-		item.set("item_type", _random_item_type())
+		item.set("item_type", ITEM_SHIELD if forced else _random_item_type())
 		item.position = mid
 		item.set_meta("circle_a", circles[i])
 		item.set_meta("circle_b", circles[i + 1])
@@ -304,7 +309,12 @@ func _on_item_collected(type: int) -> void:
 		ITEM_LIFE:
 			pass  # TODO: restaurar vida (lives = min(lives + 1, max_lives))
 		ITEM_SHIELD:
-			pass  # TODO: ativar escudo
+			player.set_shield(true)
+			_ui.set_shield(true)
+
+
+func _on_shield_broken() -> void:
+	_ui.set_shield(false)
 
 
 # ─── Desenho ─────────────────────────────────────────────────────────────────
