@@ -182,6 +182,7 @@ Cada nível tem **3 a 5 pulos** (círculos intermediários) entre o início e o 
 - **Círculos intermediários:** combinação de arcos, pulso e orbiters conforme o nível.
 - **Checkpoint:** sem perigo. Ponto de save. Ao chegar aqui, o próximo nível começa.
 - Ao morrer: perde uma vida e respawna no último checkpoint atingido. 3 vidas por run; ao zerar, tela de game over (tap to restart).
+- **O nível inteiro é reiniciado ao respawnar:** todo círculo com `level_randomize = true` entre o checkpoint e o próximo checkpoint sorteia novos parâmetros (raio, velocidade, padrão de arco, drift/grow speed, config de orbiters) via `Circle.randomize_level()`, chamado por `Game._reset_circles_after_checkpoint()`. O jogador nunca repete o mesmo layout ao tentar de novo.
 
 ### Progressão de dificuldade por nível
 
@@ -348,6 +349,7 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - `stop_reversing()` — para as inversões periódicas (chamado ao sair ou morrer)
 - `reset_orbiters()` — remove e recria orbiters instantaneamente (usado no respawn)
 - `reset_mirror()` — reverte `_mirror_flipped` para o estado inicial (usado no respawn)
+- `randomize_level()` — se `level_randomize`, re-executa `_apply_random_arc()` (novo raio/velocidade/padrão de arco/orbiters); chamado por `Game._reset_circles_after_checkpoint()` ao respawnar, para reiniciar o nível com novos parâmetros
 - `last_fail_reason: String` — `"blocked"` ou `"inactive"`, lido pelo Player após retorno false
 
 ### Player.gd — responsabilidades
@@ -386,6 +388,7 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - Input: toque/clique → libera chasers do círculo atual → `player.move_to(next_circle)`
 - `_on_player_landed`: atualiza `current_index`; handles mirror/chasers/shrink/drift/grow/reverse; spikes visíveis **apenas** se o círculo atual tem `drift_enabled` ou `grow_enabled`; salva checkpoint se `bg_number > 0`; para o relógio se o player chegou no próximo checkpoint após o nível cronometrado
 - `_on_player_died`: para o relógio; libera chasers/shrink/drift/grow/reverse; decrementa `lives`; se 0 → `show_game_over()`; senão respawn no checkpoint; chama `_reset_circles_after_checkpoint()`; se o nível de respawn tem relógio → `_spawn_respawn_clock()`
+- `_reset_circles_after_checkpoint`: encontra o fim do nível atual (próximo círculo com `bg_number > 0`); para cada círculo intermediário reseta mirror/shrink/drift/grow/reverse e, se `level_randomize`, chama `randomize_level()` para sortear novos parâmetros antes de recriar os orbiters — o nível inteiro é reiniciado a cada morte
 - `_on_shrink_exploded` / `_on_drift_exploded` / `_on_grow_exploded`: chamam `player.force_die(reason)`
 - `_follow_drift_circle()`: sincroniza player com círculo drift em movimento; verifica colisão câmera-aware; `queue_redraw()` durante deriva e retorno
 - `_check_grow_wall()`: a cada frame, verifica se `_grow_radius` do círculo atual toca borda da tela (world space = `cam_pos.x ± VIEWPORT_W/2/zoom`); chama `trigger_grow_explode()` se necessário
