@@ -12,12 +12,12 @@ const LIFE_START_X := 20.0
 const LIFE_SPACING := LIFE_R * 2.6
 const LIFE_COLOR   := Color(1.0, 0.85, 0.2)
 
-# Powerups (centro)
+# Escudo (centro) e contador de moedas
 const ICON_R       := 10.5
-const ICON_SPACING := 40.0
+const SHIELD_X     := VIEWPORT_W * 0.5
+const COIN_X       := 278.0
 const SHIELD_COLOR := Color(0.35, 0.75, 1.0)
 const COIN_COLOR   := Color(1.0, 0.82, 0.15)
-const MAGNET_COLOR := Color(0.82, 0.28, 0.95)
 
 # Pause (direita)
 const PAUSE_X      := 362.0
@@ -31,6 +31,7 @@ var _game_over: bool = false
 var _clock_active:   bool  = false
 var _clock_progress: float = 1.0
 var _shield_active:  bool  = false
+var score: int = 0
 
 
 func _ready() -> void:
@@ -65,6 +66,11 @@ func set_shield(active: bool) -> void:
 	queue_redraw()
 
 
+func set_score(n: int) -> void:
+	score = n
+	queue_redraw()
+
+
 func show_game_over() -> void:
 	_game_over = true
 	mouse_filter = MOUSE_FILTER_STOP
@@ -76,7 +82,8 @@ func show_game_over() -> void:
 func _draw() -> void:
 	draw_rect(Rect2(0, 0, VIEWPORT_W, BAR_H), Color(0.0, 0.0, 0.0, 0.42))
 	_draw_lives()
-	_draw_powerups()
+	_draw_shield(Vector2(SHIELD_X, ICON_Y))
+	_draw_coin_counter(Vector2(COIN_X, ICON_Y))
 	_draw_pause()
 	if _clock_active:
 		_draw_clock_bar()
@@ -91,13 +98,6 @@ func _draw_lives() -> void:
 			draw_circle(c, LIFE_R, LIFE_COLOR)
 		else:
 			draw_arc(c, LIFE_R, 0.0, TAU, 32, Color(LIFE_COLOR, 0.28), 2.0)
-
-
-func _draw_powerups() -> void:
-	var cx := VIEWPORT_W * 0.5
-	_draw_shield(Vector2(cx - ICON_SPACING, ICON_Y))
-	_draw_coin(Vector2(cx, ICON_Y))
-	_draw_magnet(Vector2(cx + ICON_SPACING, ICON_Y))
 
 
 func _draw_shield(c: Vector2) -> void:
@@ -119,22 +119,16 @@ func _draw_shield(c: Vector2) -> void:
 		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(SHIELD_COLOR, 0.82), 1.5)
 
 
-func _draw_coin(c: Vector2) -> void:
-	draw_circle(c, ICON_R, Color(COIN_COLOR, 0.18))
-	draw_arc(c, ICON_R, 0.0, TAU, 32, Color(COIN_COLOR, 0.88), 1.5)
-	draw_circle(c, ICON_R * 0.5, Color(COIN_COLOR, 0.55))
+func _draw_coin_counter(c: Vector2) -> void:
+	draw_circle(c, ICON_R, Color(COIN_COLOR, 0.22))
+	draw_arc(c, ICON_R, 0.0, TAU, 32, Color(COIN_COLOR, 0.9), 1.5)
+	draw_circle(c, ICON_R * 0.5, Color(COIN_COLOR, 0.6))
 
-
-func _draw_magnet(c: Vector2) -> void:
-	var arm := ICON_R * 0.62
-	var top := c.y - ICON_R * 0.48
-	var bot := c.y + ICON_R * 0.28
-	var col := Color(MAGNET_COLOR, 0.88)
-	draw_line(Vector2(c.x - arm, top), Vector2(c.x - arm, bot), col, 2.5, true)
-	draw_line(Vector2(c.x + arm, top), Vector2(c.x + arm, bot), col, 2.5, true)
-	draw_arc(Vector2(c.x, bot), arm, 0.0, PI, 14, col, 2.5)
-	draw_line(Vector2(c.x - arm,       top), Vector2(c.x - arm*0.22, top), Color(0.9, 0.2, 0.2, 0.9), 3.5, true)
-	draw_line(Vector2(c.x + arm*0.22, top), Vector2(c.x + arm,       top), Color(0.3, 0.55, 1.0, 0.9), 3.5, true)
+	var font: Font = ThemeDB.fallback_font
+	var font_size := 20
+	var text := "x%d" % score
+	draw_string(font, c + Vector2(ICON_R + 6.0, font_size * 0.35),
+		text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1.0, 1.0, 1.0, 0.92))
 
 
 func _draw_clock_bar() -> void:
