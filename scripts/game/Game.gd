@@ -1,6 +1,8 @@
 extends Node2D
 
 @export var circle_sequence: Array[NodePath] = []
+## Barreiras com vão deslizante (Barrier.tscn) — checadas durante o voo do player.
+@export var barriers: Array[NodePath] = []
 
 ## Probabilidade de um item aparecer entre cada par de círculos (0.0 = nunca, 1.0 = sempre).
 @export var item_spawn_chance: float = 0.4
@@ -19,6 +21,7 @@ extends Node2D
 
 var circles: Array[Node2D] = []
 var _items:  Array[Node2D] = []
+var _barrier_nodes: Array[Node2D] = []
 var _player_prev_pos: Vector2 = Vector2.ZERO
 var current_index: int = 0
 var last_checkpoint_index: int = 0
@@ -64,6 +67,8 @@ var _cam_zoom: float   = 1.0
 func _ready() -> void:
 	for path in circle_sequence:
 		circles.append(get_node(path))
+	for path in barriers:
+		_barrier_nodes.append(get_node(path))
 
 	var palette_idx := 0
 	for i in circles.size():
@@ -99,6 +104,7 @@ func _process(delta: float) -> void:
 	_follow_drift_circle()
 	_check_grow_wall()
 	_update_item_positions()
+	_check_barriers()
 	_check_items()
 	_update_clock(delta)
 
@@ -233,6 +239,29 @@ func _update_item_positions() -> void:
 		var cb := item.get_meta("circle_b") as Node2D
 		if is_instance_valid(ca) and is_instance_valid(cb):
 			item.position = (ca.position + cb.position) * 0.5
+
+
+## Checa se o player cruzou a altura (Y) de alguma barreira neste frame e, se cruzou,
+## se a posição X do cruzamento caiu dentro do vão livre daquele instante.
+## Precisa rodar ANTES de _check_items(), que é quem atualiza _player_prev_pos.
+func _check_barriers() -> void:
+	if player.state != player.State.MOVING:
+		return
+	var prev := _player_prev_pos
+	var cur  := player.global_position
+	if is_equal_approx(prev.y, cur.y):
+		return
+	for barrier in _barrier_nodes:
+		if not is_instance_valid(barrier):
+			continue
+		var by: float = barrier.global_position.y
+		if (prev.y - by) * (cur.y - by) > 0.0:
+			continue  # não cruzou a altura desta barreira neste frame
+		var t := (by - prev.y) / (cur.y - prev.y)
+		var x_at_cross := prev.x + t * (cur.x - prev.x)
+		if not barrier.call("is_open_at", x_at_cross):
+			player.force_die("barrier")
+			return
 
 
 func _check_items() -> void:

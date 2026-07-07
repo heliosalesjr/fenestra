@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://cb73n3p12qvfm"]
+[gd_scene load_steps=22 format=3 uid="uid://cb73n3p12qvfm"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn" id="2_arc"]
@@ -20,10 +20,13 @@
 [ext_resource type="PackedScene" path="res://scenes/circles/CirclePulseGrowSimple.tscn" id="18_pulsegrowsimple"]
 [ext_resource type="PackedScene" path="res://scenes/circles/CirclePulseGrow.tscn" id="19_pulsegrow"]
 [ext_resource type="Script" path="res://scripts/background/Background.gd" id="20_background"]
+[ext_resource type="PackedScene" path="res://scenes/entities/Barrier.tscn" id="21_barrier"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
-circle_sequence = Array[NodePath]([NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8"), NodePath("DualA"), NodePath("DualB"), NodePath("DualC"), NodePath("CP9"), NodePath("RevA"), NodePath("RevB"), NodePath("RevC"), NodePath("CP10"), NodePath("DriftArcA"), NodePath("DriftArcB"), NodePath("DriftArcC"), NodePath("CP11"), NodePath("DriftMirA"), NodePath("DriftMirB"), NodePath("DriftMirC"), NodePath("CP12"), NodePath("PulseGrowA"), NodePath("PulseGrowB"), NodePath("PulseGrowC"), NodePath("CP13"), NodePath("PulseGrowHardA"), NodePath("PulseGrowHardB"), NodePath("PulseGrowHardC"), NodePath("CP14")])
+circle_sequence = Array[NodePath]([NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("BarrierArcA"), NodePath("BarrierArcB"), NodePath("BarrierArcC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8"), NodePath("DualA"), NodePath("DualB"), NodePath("DualC"), NodePath("CP9"), NodePath("RevA"), NodePath("RevB"), NodePath("RevC"), NodePath("CP10"), NodePath("DriftArcA"), NodePath("DriftArcB"), NodePath("DriftArcC"), NodePath("CP11"), NodePath("DriftMirA"), NodePath("DriftMirB"), NodePath("DriftMirC"), NodePath("CP12"), NodePath("PulseGrowA"), NodePath("PulseGrowB"), NodePath("PulseGrowC"), NodePath("CP13"), NodePath("PulseGrowHardA"), NodePath("PulseGrowHardB"), NodePath("PulseGrowHardC"), NodePath("CP14"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP15")])
+barriers = Array[NodePath]([NodePath("BarrierGap0"), NodePath("BarrierGap1"), NodePath("BarrierGap2"), NodePath("BarrierGap3")])
+clock_before_levels = Array[int]([2, 4])
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
@@ -47,15 +50,15 @@ position = Vector2(255, -900)
 circle_radius = 70.0
 bg_number = 2
 
-[node name="PulseA" parent="." instance=ExtResource("3_pulse")]
+[node name="BarrierArcA" parent="." instance=ExtResource("2_arc")]
 position = Vector2(82, -1350)
 level_randomize = true
 
-[node name="PulseB" parent="." instance=ExtResource("3_pulse")]
+[node name="BarrierArcB" parent="." instance=ExtResource("2_arc")]
 position = Vector2(290, -1800)
 level_randomize = true
 
-[node name="PulseC" parent="." instance=ExtResource("3_pulse")]
+[node name="BarrierArcC" parent="." instance=ExtResource("2_arc")]
 position = Vector2(150, -2250)
 level_randomize = true
 
@@ -244,6 +247,34 @@ position = Vector2(115, -23850)
 [node name="CP14" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, -24300)
 bg_number = 15
+
+[node name="PulseA" parent="." instance=ExtResource("3_pulse")]
+position = Vector2(108, -24750)
+level_randomize = true
+
+[node name="PulseB" parent="." instance=ExtResource("3_pulse")]
+position = Vector2(282, -25200)
+level_randomize = true
+
+[node name="PulseC" parent="." instance=ExtResource("3_pulse")]
+position = Vector2(115, -25650)
+level_randomize = true
+
+[node name="CP15" parent="." instance=ExtResource("1_checkpoint")]
+position = Vector2(195, -26100)
+bg_number = 16
+
+[node name="BarrierGap0" parent="." instance=ExtResource("21_barrier")]
+position = Vector2(0, -1125)
+
+[node name="BarrierGap1" parent="." instance=ExtResource("21_barrier")]
+position = Vector2(0, -1575)
+
+[node name="BarrierGap2" parent="." instance=ExtResource("21_barrier")]
+position = Vector2(0, -2025)
+
+[node name="BarrierGap3" parent="." instance=ExtResource("21_barrier")]
+position = Vector2(0, -2475)
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="."]
 layer = -1

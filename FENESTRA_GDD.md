@@ -202,6 +202,8 @@ Cada nível introduz **exatamente uma variável nova**. Nunca subir dois eixos d
 | 10 | Inversão de rotação (reversão periódica irregular) | ✅ raio 48–80px, vel. ±50–95°/s, intervalo 1.0–2.2s re-sorteado | Releitura contínua de direção sob pressão |
 | 11 | Deriva com arco (deriva + arco, sem pulso) | ✅ raio 48–80px, vel. ±50–95°/s, drift 25–50px/s, 5 padrões de arco | Timing de arco + urgência espacial simultâneos |
 | 12 | Deriva com espelho (deriva + inversão a cada pouso) | ✅ raio 48–80px, vel. ±60–110°/s, drift 25–50px/s, 5 padrões de arco | Reaprendizado de arco + deriva lateral + inversão |
+| 13–14 | Pulso + Inflador (simples / hard) | ✅ (ver `CirclePulseGrowSimple.tscn` / `CirclePulseGrow.tscn`) | — *(pendente de documentação detalhada)* |
+| 15 | Arcos + Barreiras deslizantes (`Barrier.tscn` nos 4 gaps do nível) | ✅ raio 48–80px, vel. 50–95°/s, 5 padrões de arco (círculo); vão 60–85px, vel. 70–160px/s, direção sorteada (barreira) | Timing de arco no círculo **+** timing de posição na barreira, na mesma janela de voo |
 
 ### Regras de balanceamento
 - Quando o arco livre é pequeno → o pulso deve ter janela longa
@@ -716,6 +718,25 @@ Espaçamento vertical uniforme de **450px** entre todos os círculos. Com zoom �
 > Combina a deriva lateral do Nível 7 com a inversão do Nível 5. A cada pouso: a rotação inverte, verde/cinza trocam E o círculo começa a deslizar. O player precisa processar a nova janela invertida enquanto as spikes se aproximam. A pressão é tripla — reaprendizado de posição, releitura de direção e urgência espacial — tornando este o nível mais complexo do demo.
 
 > Os raios de órbita e velocidades dos orbiters são gerados proceduralmente em `_ready()` com `randf_range()`. O número exibido no centro dos checkpoints usa `ThemeDB.fallback_font` com `circle_radius * 1.15` como tamanho, opacidade 13%.
+
+---
+
+### Nível 15 — Arcos + Barreiras deslizantes *(randomizado)*
+
+| Nó | Posição | Tipo | Detalhe |
+|----|---------|------|---------|
+| BarrierArcA | (108, −24750) | `CircleArc.tscn` | raio 48–80px, vel. 50–95°/s, 1 de 5 padrões de arco |
+| BarrierGap0 | (0, −24525) | `Barrier.tscn` | entre CP14 e BarrierArcA |
+| BarrierArcB | (282, −25200) | `CircleArc.tscn` | raio 48–80px, vel. 50–95°/s, 1 de 5 padrões de arco |
+| BarrierGap1 | (0, −24975) | `Barrier.tscn` | entre BarrierArcA e BarrierArcB |
+| BarrierArcC | (115, −25650) | `CircleArc.tscn` | raio 48–80px, vel. 50–95°/s, 1 de 5 padrões de arco |
+| BarrierGap2 | (0, −25425) | `Barrier.tscn` | entre BarrierArcB e BarrierArcC |
+| BarrierGap3 | (0, −25875) | `Barrier.tscn` | entre BarrierArcC e CP15 |
+| CP15 | (195, −26100) | `CircleCheckpoint.tscn` | Checkpoint (bg_number=16) |
+
+> Reaproveita o círculo de arcos do Nível 1, mas agora cada um dos 4 gaps do nível tem uma **barreira horizontal** (`Barrier.gd`) com um vão de 60–85px que desliza da esquerda pra direita e volta (ping-pong), velocidade e direção inicial sorteadas por barreira. O player precisa cruzar a altura da barreira exatamente quando o vão estiver alinhado com o X do pulo — timing de posição, não de ângulo. Combinado com o arco bloqueado do círculo de destino, exige ler duas janelas na mesma janela de voo (~0.14s).
+>
+> Detecção: `Game._check_barriers()` roda a cada frame enquanto `player.state == MOVING`, comparando o segmento `_player_prev_pos → player.global_position` contra o Y global de cada barreira em `barriers: Array[NodePath]`. Se o segmento cruza essa altura, interpola o X do cruzamento e chama `barrier.is_open_at(x)`; se `false`, `player.force_die("barrier")`. Roda **antes** de `_check_items()`, que é quem atualiza `_player_prev_pos`.
 
 ---
 
