@@ -447,7 +447,8 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - `_on_mode_selected(shuffled)`: chama `_build_run(shuffled)` e depois `_finish_setup()`
 - `_build_run(shuffled)`: instancia cada chunk de `level_pool` (embaralhado ou não), encadeia via `chunk.position.y` acumulado por `height`, preenche `circles`/`_barrier_nodes` e atribui `bg_number = i + 2` a cada checkpoint (ver seção "Montagem da run")
 - `_finish_setup()`: paleta de cores, `_first_walls_index`, primeiro `attach_to_circle`, câmera inicial, `_spawn_items()`; termina setando `_run_ready = true`
-- `_process()` e `_unhandled_input()` retornam cedo enquanto `_run_ready == false`
+- `_process()` retorna cedo enquanto `_run_ready == false`; no primeiro frame com a run montada seta `_input_unlocked = true`
+- `_unhandled_input()` só reage a toques quando `_input_unlocked == true` — não quando `_run_ready` vira true diretamente. Isso evita que o próprio toque que escolheu o modo (consumido por `UIOverlay._gui_input`, que já chama `set_input_as_handled()`) "vaze" como o primeiro pulo automático do player
 - `_draw()`: desenha linhas de conexão entre círculos consecutivos
 - Input: toque/clique → libera chasers do círculo atual → `player.move_to(next_circle)`
 - `_on_player_landed`: atualiza `current_index`; handles mirror/chasers/shrink/drift/grow/reverse; spikes visíveis **apenas** se o círculo atual tem `drift_enabled` ou `grow_enabled`; salva checkpoint se `bg_number > 0`; para o relógio se o player chegou no próximo checkpoint após o nível cronometrado

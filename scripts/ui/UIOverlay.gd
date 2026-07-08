@@ -271,10 +271,13 @@ func _gui_input(event: InputEvent) -> void:
 	if _mode_select_active:
 		if _mode_seq_rect().has_point(pos):
 			_finish_mode_select(false)
+			get_viewport().set_input_as_handled()
 		elif _mode_shuffle_rect().has_point(pos):
 			_finish_mode_select(true)
+			get_viewport().set_input_as_handled()
 	elif _game_over:
 		get_tree().reload_current_scene()
+		get_viewport().set_input_as_handled()
 
 
 # ─── Pause ───────────────────────────────────────────────────────────────────

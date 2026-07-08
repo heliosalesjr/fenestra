@@ -31,6 +31,8 @@ var lives: int = MAX_LIVES
 var score: int = 0
 var _first_walls_index: int = -1   # primeiro círculo com drift ou grow (ativa spikes)
 var _run_ready: bool = false       # true só depois que o player escolhe o modo e a run é montada
+var _input_unlocked: bool = false  # só vira true no primeiro _process() após _run_ready — evita que o
+									# próprio toque que escolheu o modo "vaze" como um pulo
 
 var _clock_active:             bool   = false
 var _clock_time_left:          float  = 0.0
@@ -139,6 +141,7 @@ func _finish_setup() -> void:
 func _process(delta: float) -> void:
 	if not _run_ready:
 		return
+	_input_unlocked = true
 	_update_camera(delta)
 	_follow_drift_circle()
 	_check_grow_wall()
@@ -398,7 +401,7 @@ func _draw() -> void:
 # ─── Input ───────────────────────────────────────────────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _run_ready:
+	if not _input_unlocked:
 		return
 	if player.state != player.State.ON_CIRCLE:
 		return
