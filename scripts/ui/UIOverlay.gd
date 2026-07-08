@@ -276,8 +276,8 @@ func _gui_input(event: InputEvent) -> void:
 			_finish_mode_select(true)
 			get_viewport().set_input_as_handled()
 	elif _game_over:
-		get_tree().reload_current_scene()
 		get_viewport().set_input_as_handled()
+		get_tree().reload_current_scene()
 
 
 # ─── Pause ───────────────────────────────────────────────────────────────────
