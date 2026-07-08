@@ -355,7 +355,7 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 ## Nós e cenas principais
 
 ### Circle.tscn
-- **Node2D** (raiz) — `Circle.gd`
+- **Node2D** (raiz) — `Circle.gd` (`class_name Circle`)
   - **Node2D** `RotationRoot` — gira continuamente
     - **Node2D** `ArcVisual` — `ArcVisual.gd`, desenha os arcos via `_draw()`
   - **AnimationPlayer** — disponível para animações futuras
@@ -442,6 +442,7 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - `fade_and_free()` — remoção suave (delega para stop_chasing se estiver perseguindo)
 
 ### Game.gd — responsabilidades
+- `Circle.gd`, `Barrier.gd`, `Player.gd` e `LevelChunk.gd` têm `class_name` (`Circle`, `Barrier`, `Player`, `LevelChunk`). `circles: Array[Circle]` e `_barrier_nodes: Array[Barrier]` são tipados — a maior parte das interações de `Game.gd` com eles (`cur.drift_enabled`, `cur.start_drifting()`, `circle.shrink_exploded.connect(...)`) é acesso/chamada direta, não mais `.get("prop")`/`.call("method")` por string. Reduziu de 79 para 4 usos de `.call()/.get()/.set()` em `Game.gd` — os 4 restantes são em `_items` (mistura de `Item`/`ClockItem`, que não compartilham uma classe base, então continuam duck-typed de propósito)
 - Mantém `level_pool: Array[PackedScene]` (os 15 `LevelChunk`, configurado no editor)
 - `_ready()`: conecta sinais do player e chama `_ui.show_mode_select()` — não monta nada ainda
 - `_on_mode_selected(shuffled)`: chama `_build_run(shuffled)` e depois `_finish_setup()`

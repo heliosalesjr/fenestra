@@ -1,3 +1,4 @@
+class_name Player
 extends Node2D
 
 signal landed_on(circle: Node2D)

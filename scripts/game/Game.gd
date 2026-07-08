@@ -13,16 +13,16 @@ extends Node2D
 ## bg_numbers dos níveis que devem ter relógio antes do primeiro círculo.
 @export var clock_before_levels: Array[int] = [2, 3, 4]
 
-@onready var player: Node2D         = $Player
-@onready var _camera: Camera2D      = $Camera2D
-@onready var _ui: Control           = $UI/TopBar
-@onready var _spike_walls: Node2D   = $SpikeLayer/SpikeWalls
-@onready var _background: Node2D    = $BackgroundLayer/Background
-@onready var _circle_start: Node2D  = $CircleStart
+@onready var player: Player          = $Player
+@onready var _camera: Camera2D       = $Camera2D
+@onready var _ui: Control            = $UI/TopBar
+@onready var _spike_walls: Node2D    = $SpikeLayer/SpikeWalls
+@onready var _background: Node2D     = $BackgroundLayer/Background
+@onready var _circle_start: Circle   = $CircleStart
 
-var circles: Array[Node2D] = []
+var circles: Array[Circle] = []
 var _items:  Array[Node2D] = []
-var _barrier_nodes: Array[Node2D] = []
+var _barrier_nodes: Array[Barrier] = []
 var _player_prev_pos: Vector2 = Vector2.ZERO
 var current_index: int = 0
 var last_checkpoint_index: int = 0
@@ -96,17 +96,17 @@ func _build_run(shuffled: bool) -> void:
 
 	var entry_y := _circle_start.position.y
 	for i in pool.size():
-		var chunk: Node2D = (pool[i] as PackedScene).instantiate()
+		var chunk := (pool[i] as PackedScene).instantiate() as LevelChunk
 		add_child(chunk)
 		chunk.position = Vector2(0.0, entry_y)
 
-		var chunk_circles: Array[Node2D] = chunk.call("get_level_circles")
+		var chunk_circles := chunk.get_level_circles()
 		var checkpoint := chunk_circles[chunk_circles.size() - 1]
-		checkpoint.set("bg_number", i + 2)
+		checkpoint.bg_number = i + 2
 		circles.append_array(chunk_circles)
-		_barrier_nodes.append_array(chunk.call("get_barriers"))
+		_barrier_nodes.append_array(chunk.get_barriers())
 
-		entry_y -= float(chunk.get("height"))
+		entry_y -= chunk.height
 
 
 ## Tudo que dependia de `circles` já estar montado — câmera, paleta, spawn de
@@ -115,13 +115,13 @@ func _build_run(shuffled: bool) -> void:
 func _finish_setup() -> void:
 	var palette_idx := 0
 	for i in circles.size():
-		if circles[i].get("bg_number") > 0:
+		if circles[i].bg_number > 0:
 			palette_idx += 1
-			circles[i].call("set_thin_border", true)
-		circles[i].call("set_ring_color", RING_PALETTE[palette_idx % RING_PALETTE.size()])
+			circles[i].set_thin_border(true)
+		circles[i].set_ring_color(RING_PALETTE[palette_idx % RING_PALETTE.size()])
 
 	for i in circles.size():
-		if circles[i].get("drift_enabled") or circles[i].get("grow_enabled"):
+		if circles[i].drift_enabled or circles[i].grow_enabled:
 			_first_walls_index = i
 			break
 
@@ -166,9 +166,8 @@ func _update_camera(delta: float) -> void:
 
 func _next_circle() -> Node2D:
 	# Durante movimento, usa o círculo de destino como "próximo"
-	var dest := player.get("destination_circle") as Node2D
-	if player.state == player.State.MOVING and dest:
-		return dest
+	if player.state == player.State.MOVING and player.destination_circle:
+		return player.destination_circle
 	return circles[min(current_index + 1, circles.size() - 1)]
 
 
@@ -198,20 +197,20 @@ func _follow_drift_circle() -> void:
 	var needs_redraw := false
 	if player.state == player.State.ON_CIRCLE:
 		var cur := circles[current_index]
-		if cur.get("drift_enabled") and cur.get("_drifting"):
+		if cur.drift_enabled and cur._drifting:
 			player.global_position = cur.global_position
 			needs_redraw = true
 			# Colisão com as bordas reais da tela (compensa zoom da câmera)
-			var radius: float    = cur.get("circle_radius")
-			var half_w: float    = (VIEWPORT_W * 0.5) / _cam_zoom
+			var radius: float     = cur.circle_radius
+			var half_w: float     = (VIEWPORT_W * 0.5) / _cam_zoom
 			var wall_left: float  = _cam_pos.x - half_w
 			var wall_right: float = _cam_pos.x + half_w
 			if cur.global_position.x - radius <= wall_left or \
 			   cur.global_position.x + radius >= wall_right:
-				cur.call("trigger_drift_explode")
+				cur.trigger_drift_explode()
 	if not needs_redraw:
 		for c in circles:
-			if c.get("_drift_returning"):
+			if c._drift_returning:
 				needs_redraw = true
 				break
 	if needs_redraw:
@@ -222,15 +221,15 @@ func _check_grow_wall() -> void:
 	if player.state != player.State.ON_CIRCLE:
 		return
 	var cur := circles[current_index]
-	if not cur.get("grow_enabled") or not cur.get("_growing"):
+	if not cur.grow_enabled or not cur._growing:
 		return
-	var radius: float    = cur.get("_grow_radius")
-	var half_w: float    = (VIEWPORT_W * 0.5) / _cam_zoom
+	var radius: float     = cur._grow_radius
+	var half_w: float     = (VIEWPORT_W * 0.5) / _cam_zoom
 	var wall_left: float  = _cam_pos.x - half_w
 	var wall_right: float = _cam_pos.x + half_w
 	if cur.global_position.x - radius <= wall_left or \
 	   cur.global_position.x + radius >= wall_right:
-		cur.call("trigger_grow_explode")
+		cur.trigger_grow_explode()
 
 
 # ─── Itens ───────────────────────────────────────────────────────────────────
@@ -242,7 +241,7 @@ func _spawn_items() -> void:
 	# Identifica gaps que devem ter relógio (gap i = entre circles[i] e circles[i+1])
 	var clock_gaps: Dictionary = {}
 	for i in circles.size():
-		var bg_n: int = circles[i].get("bg_number")
+		var bg_n: int = circles[i].bg_number
 		if bg_n > 0 and clock_before_levels.has(bg_n) and i > 0:
 			var gap_idx := i - 1
 			clock_gaps[gap_idx] = true
@@ -301,7 +300,7 @@ func _check_barriers() -> void:
 			continue  # não cruzou a altura desta barreira neste frame
 		var t := (by - prev.y) / (cur.y - prev.y)
 		var x_at_cross := prev.x + t * (cur.x - prev.x)
-		if not barrier.call("is_open_at", x_at_cross):
+		if not barrier.is_open_at(x_at_cross):
 			player.force_die("barrier")
 			return
 
@@ -417,59 +416,60 @@ func _jump_to_next() -> void:
 	if circles.size() < 2:
 		return
 	var cur := circles[current_index]
-	if cur.get("orbiter_chaser"):
-		cur.call("release_chasers")
-	if cur.get("shrink_enabled"):
-		cur.call("stop_shrinking")
+	if cur.orbiter_chaser:
+		cur.release_chasers()
+	if cur.shrink_enabled:
+		cur.stop_shrinking()
 		_disconnect_shrink(cur)
-	if cur.get("drift_enabled"):
-		cur.call("stop_drifting")
+	if cur.drift_enabled:
+		cur.stop_drifting()
 		_disconnect_drift(cur)
-	if cur.get("grow_enabled"):
-		cur.call("stop_growing")
+	if cur.grow_enabled:
+		cur.stop_growing()
 		_disconnect_grow(cur)
-	if cur.get("poison_enabled"):
-		cur.call("stop_poisoning")
+	if cur.poison_enabled:
+		cur.stop_poisoning()
 		_disconnect_poison(cur)
-	if cur.get("reverse_enabled"):
-		cur.call("stop_reversing")
+	if cur.reverse_enabled:
+		cur.stop_reversing()
 	var next_idx := (current_index + 1) % circles.size()
 	player.move_to(circles[next_idx])
 
 
 # ─── Sinais do player ────────────────────────────────────────────────────────
 
-func _on_player_landed(circle: Node2D) -> void:
+func _on_player_landed(circle_node: Node2D) -> void:
+	var circle := circle_node as Circle
 	current_index = circles.find(circle)
 	var arc_visual := circle.get_node_or_null("RotationRoot/ArcVisual")
 	if arc_visual:
 		_background.set_tint(arc_visual.free_color)
-	_spike_walls.visible = circle.get("drift_enabled") or circle.get("grow_enabled")
-	if circle.get("mirror_mode"):
-		circle.call("flip_mirror")
-	if circle.get("orbiter_chaser"):
-		circle.call("activate_chasers", player)
+	_spike_walls.visible = circle.drift_enabled or circle.grow_enabled
+	if circle.mirror_mode:
+		circle.flip_mirror()
+	if circle.orbiter_chaser:
+		circle.activate_chasers(player)
 	else:
 		circle.clear_orbiters()
-	if circle.get("shrink_enabled"):
-		circle.call("start_shrinking")
-		if not circle.is_connected("shrink_exploded", _on_shrink_exploded):
-			circle.connect("shrink_exploded", _on_shrink_exploded)
-	if circle.get("drift_enabled"):
-		circle.call("start_drifting")
-		if not circle.is_connected("drift_exploded", _on_drift_exploded):
-			circle.connect("drift_exploded", _on_drift_exploded)
-	if circle.get("grow_enabled"):
-		circle.call("start_growing")
-		if not circle.is_connected("grow_exploded", _on_grow_exploded):
-			circle.connect("grow_exploded", _on_grow_exploded)
-	if circle.get("poison_enabled"):
-		circle.call("start_poisoning")
-		if not circle.is_connected("poison_exploded", _on_poison_exploded):
-			circle.connect("poison_exploded", _on_poison_exploded)
-	if circle.get("reverse_enabled"):
-		circle.call("start_reversing")
-	if circle.get("bg_number") > 0:
+	if circle.shrink_enabled:
+		circle.start_shrinking()
+		if not circle.shrink_exploded.is_connected(_on_shrink_exploded):
+			circle.shrink_exploded.connect(_on_shrink_exploded)
+	if circle.drift_enabled:
+		circle.start_drifting()
+		if not circle.drift_exploded.is_connected(_on_drift_exploded):
+			circle.drift_exploded.connect(_on_drift_exploded)
+	if circle.grow_enabled:
+		circle.start_growing()
+		if not circle.grow_exploded.is_connected(_on_grow_exploded):
+			circle.grow_exploded.connect(_on_grow_exploded)
+	if circle.poison_enabled:
+		circle.start_poisoning()
+		if not circle.poison_exploded.is_connected(_on_poison_exploded):
+			circle.poison_exploded.connect(_on_poison_exploded)
+	if circle.reverse_enabled:
+		circle.start_reversing()
+	if circle.bg_number > 0:
 		last_checkpoint_index = current_index
 		if _clock_active and current_index > _clock_start_circle_index:
 			_stop_clock()
@@ -479,58 +479,58 @@ func _on_shrink_exploded() -> void:
 	player.force_die("shrink")
 
 
-func _disconnect_shrink(circle: Node2D) -> void:
-	if circle.is_connected("shrink_exploded", _on_shrink_exploded):
-		circle.disconnect("shrink_exploded", _on_shrink_exploded)
+func _disconnect_shrink(circle: Circle) -> void:
+	if circle.shrink_exploded.is_connected(_on_shrink_exploded):
+		circle.shrink_exploded.disconnect(_on_shrink_exploded)
 
 
 func _on_drift_exploded() -> void:
 	player.force_die("drift")
 
 
-func _disconnect_drift(circle: Node2D) -> void:
-	if circle.is_connected("drift_exploded", _on_drift_exploded):
-		circle.disconnect("drift_exploded", _on_drift_exploded)
+func _disconnect_drift(circle: Circle) -> void:
+	if circle.drift_exploded.is_connected(_on_drift_exploded):
+		circle.drift_exploded.disconnect(_on_drift_exploded)
 
 
 func _on_grow_exploded() -> void:
 	player.force_die("grow")
 
 
-func _disconnect_grow(circle: Node2D) -> void:
-	if circle.is_connected("grow_exploded", _on_grow_exploded):
-		circle.disconnect("grow_exploded", _on_grow_exploded)
+func _disconnect_grow(circle: Circle) -> void:
+	if circle.grow_exploded.is_connected(_on_grow_exploded):
+		circle.grow_exploded.disconnect(_on_grow_exploded)
 
 
 func _on_poison_exploded() -> void:
 	player.force_die("poison")
 
 
-func _disconnect_poison(circle: Node2D) -> void:
-	if circle.is_connected("poison_exploded", _on_poison_exploded):
-		circle.disconnect("poison_exploded", _on_poison_exploded)
+func _disconnect_poison(circle: Circle) -> void:
+	if circle.poison_exploded.is_connected(_on_poison_exploded):
+		circle.poison_exploded.disconnect(_on_poison_exploded)
 
 
 func _on_player_died(reason: String) -> void:
 	print_rich("[color=red]Morte:[/color] ", reason)
 	_stop_clock()
 	var cur := circles[current_index]
-	if cur.get("orbiter_chaser"):
-		cur.call("release_chasers")
-	if cur.get("shrink_enabled"):
-		cur.call("stop_shrinking")
+	if cur.orbiter_chaser:
+		cur.release_chasers()
+	if cur.shrink_enabled:
+		cur.stop_shrinking()
 		_disconnect_shrink(cur)
-	if cur.get("drift_enabled"):
-		cur.call("stop_drifting")
+	if cur.drift_enabled:
+		cur.stop_drifting()
 		_disconnect_drift(cur)
-	if cur.get("grow_enabled"):
-		cur.call("stop_growing")
+	if cur.grow_enabled:
+		cur.stop_growing()
 		_disconnect_grow(cur)
-	if cur.get("poison_enabled"):
-		cur.call("stop_poisoning")
+	if cur.poison_enabled:
+		cur.stop_poisoning()
 		_disconnect_poison(cur)
-	if cur.get("reverse_enabled"):
-		cur.call("stop_reversing")
+	if cur.reverse_enabled:
+		cur.stop_reversing()
 	lives -= 1
 	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
@@ -539,10 +539,10 @@ func _on_player_died(reason: String) -> void:
 		return
 	current_index = last_checkpoint_index
 	var cp_circle := circles[last_checkpoint_index]
-	_spike_walls.visible = cp_circle.get("drift_enabled") or cp_circle.get("grow_enabled")
+	_spike_walls.visible = cp_circle.drift_enabled or cp_circle.grow_enabled
 	_reset_circles_after_checkpoint()
 	player.respawn(circles[last_checkpoint_index])
-	if clock_before_levels.has(cp_circle.get("bg_number")):
+	if clock_before_levels.has(cp_circle.bg_number):
 		_spawn_respawn_clock()
 
 
@@ -568,25 +568,25 @@ func _reset_circles_after_checkpoint() -> void:
 	# Fim do nível atual: até o próximo círculo de checkpoint (ou o fim da sequência).
 	var level_end := circles.size()
 	for i in range(last_checkpoint_index + 1, circles.size()):
-		if circles[i].get("bg_number") > 0:
+		if circles[i].bg_number > 0:
 			level_end = i
 			break
 
 	for i in range(last_checkpoint_index + 1, circles.size()):
 		var c := circles[i]
-		if c.get("mirror_mode"):
-			c.call("reset_mirror")
-		if c.get("shrink_enabled"):
-			c.call("stop_shrinking")
-		if c.get("drift_enabled"):
-			c.call("stop_drifting")
-		if c.get("grow_enabled"):
-			c.call("stop_growing")
-		if c.get("poison_enabled"):
-			c.call("stop_poisoning")
-		if c.get("reverse_enabled"):
-			c.call("stop_reversing")
-		if i < level_end and c.get("level_randomize"):
-			c.call("randomize_level")
-		if c.get("orbiter_count") > 0:
-			c.call("reset_orbiters")
+		if c.mirror_mode:
+			c.reset_mirror()
+		if c.shrink_enabled:
+			c.stop_shrinking()
+		if c.drift_enabled:
+			c.stop_drifting()
+		if c.grow_enabled:
+			c.stop_growing()
+		if c.poison_enabled:
+			c.stop_poisoning()
+		if c.reverse_enabled:
+			c.stop_reversing()
+		if i < level_end and c.level_randomize:
+			c.randomize_level()
+		if c.orbiter_count > 0:
+			c.reset_orbiters()

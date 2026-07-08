@@ -1,3 +1,4 @@
+class_name Barrier
 extends Node2D
 
 ## Barreira horizontal com um vão (gap) que desliza da esquerda pra direita e volta.

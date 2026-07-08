@@ -1,3 +1,5 @@
-res://scripts/game/Game.gd
-res://scripts/ui/UIOverlay.gd
+res://scripts/circles/Circle.gd
 res://scripts/entities/Barrier.gd
+res://scripts/entities/Player.gd
+res://scripts/game/Game.gd
+res://scripts/levels/LevelChunk.gd

@@ -1,3 +1,4 @@
+class_name LevelChunk
 extends Node2D
 
 ## Bloco relocável de um nível: 3 círculos de perigo + 1 checkpoint (+ barreiras
@@ -22,16 +23,16 @@ extends Node2D
 
 
 ## Retorna os círculos do nível na ordem de jogo: perigos + checkpoint por último.
-func get_level_circles() -> Array[Node2D]:
-	var out: Array[Node2D] = []
+func get_level_circles() -> Array[Circle]:
+	var out: Array[Circle] = []
 	for p in trick_circles:
-		out.append(get_node(p))
-	out.append(get_node(checkpoint_path))
+		out.append(get_node(p) as Circle)
+	out.append(get_node(checkpoint_path) as Circle)
 	return out
 
 
-func get_barriers() -> Array[Node2D]:
-	var out: Array[Node2D] = []
+func get_barriers() -> Array[Barrier]:
+	var out: Array[Barrier] = []
 	for p in barrier_paths:
-		out.append(get_node(p))
+		out.append(get_node(p) as Barrier)
 	return out

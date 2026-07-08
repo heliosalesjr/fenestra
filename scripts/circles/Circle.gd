@@ -1,4 +1,5 @@
 @tool
+class_name Circle
 extends Node2D
 
 ## Círculo giratório — unidade central de jogo.
