@@ -12,6 +12,9 @@ enum State { ON_CIRCLE, MOVING, DEAD }
 @export var dead_color: Color    = Color(1.0, 0.2, 0.2)
 @export var shield_color: Color  = Color(0.35, 0.75, 1.0)
 @export var move_duration: float = 0.14
+## Tempo de invencibilidade logo após o respawn (cobre a animação de pulo de volta
+## ao checkpoint, que varre por cima de barreiras/orbiters do caminho de volta).
+@export var respawn_invuln_duration: float = 1.2
 
 const SHIELD_INVULN_DURATION := 1.0
 const SHIELD_FLASH_MODULATE  := Color(2.2, 5.2, 8.5, 1.0)   # bloom azulado, mesmo truque HDR do resto do sprite
@@ -23,6 +26,7 @@ var destination_circle: Node2D = null
 var _active_tween: Tween = null
 var has_shield: bool = false
 var _invuln_timer: float = 0.0
+var _respawn_invuln_timer: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var shield_bubble: Node2D = $ShieldBubble
@@ -38,6 +42,9 @@ func _draw() -> void:
 
 
 func _process(delta: float) -> void:
+	if _respawn_invuln_timer > 0.0:
+		_respawn_invuln_timer = maxf(0.0, _respawn_invuln_timer - delta)
+
 	if _invuln_timer > 0.0:
 		_invuln_timer = maxf(0.0, _invuln_timer - delta)
 		var blink := sin(Time.get_ticks_msec() * 0.03) > 0.0
@@ -104,6 +111,7 @@ func move_to(target: Node2D) -> void:
 
 func respawn(circle: Node2D) -> void:
 	state = State.MOVING
+	_respawn_invuln_timer = respawn_invuln_duration
 	queue_redraw()
 	if _active_tween:
 		_active_tween.kill()
@@ -253,6 +261,8 @@ func force_die(reason: String) -> void:
 
 
 func _die(reason: String) -> void:
+	if _respawn_invuln_timer > 0.0:
+		return
 	if _try_shield_save():
 		return
 	if _active_tween:
