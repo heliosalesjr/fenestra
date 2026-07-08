@@ -258,6 +258,34 @@ independente do modo escolhido.
 no início) — não é geração infinita. Virar "endless" de verdade exigiria instanciar/liberar
 chunks sob demanda conforme o player se aproxima do fim, o que é um passo futuro.
 
+**Fragilidade atual:** `level_pool` é um `Array[PackedScene]` populado manualmente arrastando
+os 15 chunks no Inspector, em ordem. Não há validação — se faltar um item ou duplicar, o jogo
+roda silenciosamente com uma run mais curta ou repetida, sem aviso nenhum.
+
+#### Plano futuro — grupos de dificuldade (ainda não implementado)
+
+Quando o jogo tiver mais níveis e eles forem classificados em grupos (fácil/médio/difícil,
+provavelmente) pra montar runs tipo "N fáceis + M médios + K difíceis", a ideia é:
+
+1. **`LevelChunk.gd` ganha `@export var difficulty: Difficulty`** (enum a definir — provável
+   `EASY / MEDIUM / HARD`). Só o dado, sem lógica. Cada chunk novo já nasce com a tag — evita
+   ter que classificar os 15+ retroativamente de uma vez quando o sistema for construído.
+2. **`level_pool` deixa de ser array manual e vira descoberta automática**: `Game.gd` escaneia
+   `res://scenes/levels/` via `DirAccess` na inicialização, ordenado por nome de arquivo (já
+   nomeados com prefixo numérico — `Level01Arc.tscn` … `Level15Barrier.tscn` — então a ordem
+   sai de graça). Resolve a fragilidade acima (não existe mais lista pra dessincronizar) e essa
+   mesma varredura é o lugar natural pra também ler `difficulty` de cada chunk e montar os
+   grupos, sem precisar manter esse mapeamento em outro arquivo.
+3. **`_build_run(shuffled)` se divide em duas etapas explícitas**: `_select_levels(mode) ->
+   Array[PackedScene]` (hoje: todos os níveis, embaralhados ou não) e `_instantiate_run(levels)`
+   (o encadeamento via `entry_y`/`height`, que já está pronto e não muda). Quando a regra de
+   grupos existir, só o corpo de `_select_levels` muda — o resto do pipeline (instanciar,
+   encadear posição, atribuir `bg_number`, popular `circles`/`_barrier_nodes`) continua igual.
+
+Regras de composição (quantos de cada grupo, se intercalam ou vêm em blocos, se é fixo ou
+escolhido pelo player) ficam em aberto de propósito — definir isso agora, sem os níveis novos
+e sem saber a distribuição real, é mais chance de retrabalho do que economia.
+
 ---
 
 ## Estrutura do projeto Godot
