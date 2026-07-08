@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level12_driftmirror"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftMirror.tscn" id="2_driftmirror"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level12DriftMirror" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("DriftMirA"), NodePath("DriftMirB"), NodePath("DriftMirC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="DriftMirA" parent="." instance=ExtResource("2_driftmirror")]
+position = Vector2(175, -450)
+
+[node name="DriftMirB" parent="." instance=ExtResource("2_driftmirror")]
+position = Vector2(215, -900)
+
+[node name="DriftMirC" parent="." instance=ExtResource("2_driftmirror")]
+position = Vector2(190, -1350)
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)

@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level06_shrink"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleShrink.tscn" id="2_shrink"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level06Shrink" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="ShrinkA" parent="." instance=ExtResource("2_shrink")]
+position = Vector2(108, -450)
+level_randomize = true
+
+[node name="ShrinkB" parent="." instance=ExtResource("2_shrink")]
+position = Vector2(282, -900)
+level_randomize = true
+
+[node name="ShrinkC" parent="." instance=ExtResource("2_shrink")]
+position = Vector2(115, -1350)
+level_randomize = true
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)

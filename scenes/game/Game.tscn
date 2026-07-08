@@ -1,280 +1,36 @@
 [gd_scene load_steps=22 format=3 uid="uid://cb73n3p12qvfm"]
 
 [ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="1_checkpoint"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn" id="2_arc"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CirclePulse.tscn" id="3_pulse"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleOrbiter.tscn" id="4_orbiter"]
 [ext_resource type="PackedScene" uid="uid://dke5550ndtj7q" path="res://scenes/entities/Player.tscn" id="5_player"]
 [ext_resource type="Script" uid="uid://4w5omflc8l2m" path="res://scripts/game/Game.gd" id="6_game"]
 [ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn" id="7_ui"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleChaser.tscn" id="8_chaser"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleMirror.tscn" id="9_mirror"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleShrink.tscn" id="10_shrink"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleDrift.tscn" id="11_drift"]
 [ext_resource type="Script" uid="uid://dprwp8crkpugq" path="res://scripts/game/SpikeWalls.gd" id="12_spikewalls"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleGrow.tscn" id="13_grow"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleDual.tscn" id="14_dual"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleReverse.tscn" id="15_reverse"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftArc.tscn" id="16_driftarc"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CircleDriftMirror.tscn" id="17_driftmirror"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CirclePulseGrowSimple.tscn" id="18_pulsegrowsimple"]
-[ext_resource type="PackedScene" path="res://scenes/circles/CirclePulseGrow.tscn" id="19_pulsegrow"]
 [ext_resource type="Script" path="res://scripts/background/Background.gd" id="20_background"]
-[ext_resource type="PackedScene" path="res://scenes/entities/Barrier.tscn" id="21_barrier"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level01Arc.tscn" id="30_level01"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level02Pulse.tscn" id="31_level02"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level03Orbiter.tscn" id="32_level03"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level04Chaser.tscn" id="33_level04"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level05Mirror.tscn" id="34_level05"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level06Shrink.tscn" id="35_level06"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level07Drift.tscn" id="36_level07"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level08Grow.tscn" id="37_level08"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level09Dual.tscn" id="38_level09"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level10Reverse.tscn" id="39_level10"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level11DriftArc.tscn" id="40_level11"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level12DriftMirror.tscn" id="41_level12"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level13PulseGrowSimple.tscn" id="42_level13"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level14PulseGrowHard.tscn" id="43_level14"]
+[ext_resource type="PackedScene" path="res://scenes/levels/Level15Barrier.tscn" id="44_level15"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("6_game")
-circle_sequence = Array[NodePath]([NodePath("CircleStart"), NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC"), NodePath("CP1"), NodePath("BarrierArcA"), NodePath("BarrierArcB"), NodePath("BarrierArcC"), NodePath("CP2"), NodePath("OrbA"), NodePath("OrbB"), NodePath("OrbC"), NodePath("CircleEnd"), NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC"), NodePath("CP4"), NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC"), NodePath("CP5"), NodePath("ShrinkA"), NodePath("ShrinkB"), NodePath("ShrinkC"), NodePath("CP6"), NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC"), NodePath("CP7"), NodePath("GrowA"), NodePath("GrowB"), NodePath("GrowC"), NodePath("CP8"), NodePath("DualA"), NodePath("DualB"), NodePath("DualC"), NodePath("CP9"), NodePath("RevA"), NodePath("RevB"), NodePath("RevC"), NodePath("CP10"), NodePath("DriftArcA"), NodePath("DriftArcB"), NodePath("DriftArcC"), NodePath("CP11"), NodePath("DriftMirA"), NodePath("DriftMirB"), NodePath("DriftMirC"), NodePath("CP12"), NodePath("PulseGrowA"), NodePath("PulseGrowB"), NodePath("PulseGrowC"), NodePath("CP13"), NodePath("PulseGrowHardA"), NodePath("PulseGrowHardB"), NodePath("PulseGrowHardC"), NodePath("CP14"), NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC"), NodePath("CP15")])
-barriers = Array[NodePath]([NodePath("BarrierGap0"), NodePath("BarrierGap1"), NodePath("BarrierGap2"), NodePath("BarrierGap3")])
-clock_before_levels = Array[int]([2, 4])
+level_pool = Array[PackedScene]([ExtResource("30_level01"), ExtResource("31_level02"), ExtResource("32_level03"), ExtResource("33_level04"), ExtResource("34_level05"), ExtResource("35_level06"), ExtResource("36_level07"), ExtResource("37_level08"), ExtResource("38_level09"), ExtResource("39_level10"), ExtResource("40_level11"), ExtResource("41_level12"), ExtResource("42_level13"), ExtResource("43_level14"), ExtResource("44_level15")])
+clock_before_levels = Array[int]([2, 3, 4])
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="CircleStart" parent="." instance=ExtResource("1_checkpoint")]
 position = Vector2(195, 900)
-
-[node name="ArcA" parent="." instance=ExtResource("2_arc")]
-position = Vector2(95, 450)
-level_randomize = true
-
-[node name="ArcB" parent="." instance=ExtResource("2_arc")]
-position = Vector2(295, 0)
-level_randomize = true
-
-[node name="ArcC" parent="." instance=ExtResource("2_arc")]
-position = Vector2(130, -450)
-level_randomize = true
-
-[node name="CP1" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(255, -900)
-circle_radius = 70.0
-bg_number = 2
-
-[node name="BarrierArcA" parent="." instance=ExtResource("2_arc")]
-position = Vector2(82, -1350)
-level_randomize = true
-
-[node name="BarrierArcB" parent="." instance=ExtResource("2_arc")]
-position = Vector2(290, -1800)
-level_randomize = true
-
-[node name="BarrierArcC" parent="." instance=ExtResource("2_arc")]
-position = Vector2(150, -2250)
-level_randomize = true
-
-[node name="CP2" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(225, -2700)
-circle_radius = 70.0
-bg_number = 3
-
-[node name="OrbA" parent="." instance=ExtResource("4_orbiter")]
-position = Vector2(88, -3150)
-rotation_speed = 65.0
-circle_radius = 62.0
-orbiter_count = 9
-orbiter_base_radius_mult = 1.55
-
-[node name="OrbB" parent="." instance=ExtResource("4_orbiter")]
-position = Vector2(300, -3600)
-rotation_speed = -52.0
-circle_radius = 74.0
-orbiter_count = 18
-orbiter_base_radius_mult = 1.85
-
-[node name="OrbC" parent="." instance=ExtResource("4_orbiter")]
-position = Vector2(108, -4050)
-rotation_speed = 90.0
-circle_radius = 54.0
-orbiter_count = 28
-orbiter_base_radius_mult = 2.1
-
-[node name="CircleEnd" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -4500)
-circle_radius = 78.0
-bg_number = 4
-
-[node name="ChaserA" parent="." instance=ExtResource("8_chaser")]
-position = Vector2(108, -4950)
-level_randomize = true
-
-[node name="ChaserB" parent="." instance=ExtResource("8_chaser")]
-position = Vector2(282, -5400)
-level_randomize = true
-
-[node name="ChaserC" parent="." instance=ExtResource("8_chaser")]
-position = Vector2(115, -5850)
-level_randomize = true
-
-[node name="CP4" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -6300)
-bg_number = 5
-
-[node name="MirrorA" parent="." instance=ExtResource("9_mirror")]
-position = Vector2(105, -6750)
-level_randomize = true
-
-[node name="MirrorB" parent="." instance=ExtResource("9_mirror")]
-position = Vector2(280, -7200)
-level_randomize = true
-
-[node name="MirrorC" parent="." instance=ExtResource("9_mirror")]
-position = Vector2(112, -7650)
-level_randomize = true
-
-[node name="CP5" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -8100)
-bg_number = 6
-
-[node name="ShrinkA" parent="." instance=ExtResource("10_shrink")]
-position = Vector2(108, -8550)
-level_randomize = true
-
-[node name="ShrinkB" parent="." instance=ExtResource("10_shrink")]
-position = Vector2(282, -9000)
-level_randomize = true
-
-[node name="ShrinkC" parent="." instance=ExtResource("10_shrink")]
-position = Vector2(115, -9450)
-level_randomize = true
-
-[node name="CP6" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -9900)
-bg_number = 7
-
-[node name="DriftA" parent="." instance=ExtResource("11_drift")]
-position = Vector2(175, -10350)
-level_randomize = true
-
-[node name="DriftB" parent="." instance=ExtResource("11_drift")]
-position = Vector2(215, -10800)
-level_randomize = true
-
-[node name="DriftC" parent="." instance=ExtResource("11_drift")]
-position = Vector2(190, -11250)
-level_randomize = true
-
-[node name="CP7" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -11700)
-bg_number = 8
-
-[node name="GrowA" parent="." instance=ExtResource("13_grow")]
-position = Vector2(155, -12150)
-
-[node name="GrowB" parent="." instance=ExtResource("13_grow")]
-position = Vector2(235, -12600)
-
-[node name="GrowC" parent="." instance=ExtResource("13_grow")]
-position = Vector2(160, -13050)
-
-[node name="CP8" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -13500)
-bg_number = 9
-
-[node name="DualA" parent="." instance=ExtResource("14_dual")]
-position = Vector2(108, -13950)
-
-[node name="DualB" parent="." instance=ExtResource("14_dual")]
-position = Vector2(282, -14400)
-
-[node name="DualC" parent="." instance=ExtResource("14_dual")]
-position = Vector2(115, -14850)
-
-[node name="CP9" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -15300)
-bg_number = 10
-
-[node name="RevA" parent="." instance=ExtResource("15_reverse")]
-position = Vector2(108, -15750)
-
-[node name="RevB" parent="." instance=ExtResource("15_reverse")]
-position = Vector2(282, -16200)
-
-[node name="RevC" parent="." instance=ExtResource("15_reverse")]
-position = Vector2(115, -16650)
-
-[node name="CP10" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -17100)
-bg_number = 11
-
-[node name="DriftArcA" parent="." instance=ExtResource("16_driftarc")]
-position = Vector2(108, -17550)
-
-[node name="DriftArcB" parent="." instance=ExtResource("16_driftarc")]
-position = Vector2(282, -18000)
-
-[node name="DriftArcC" parent="." instance=ExtResource("16_driftarc")]
-position = Vector2(115, -18450)
-
-[node name="CP11" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -18900)
-bg_number = 12
-
-[node name="DriftMirA" parent="." instance=ExtResource("17_driftmirror")]
-position = Vector2(175, -19350)
-
-[node name="DriftMirB" parent="." instance=ExtResource("17_driftmirror")]
-position = Vector2(215, -19800)
-
-[node name="DriftMirC" parent="." instance=ExtResource("17_driftmirror")]
-position = Vector2(190, -20250)
-
-[node name="CP12" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -20700)
-bg_number = 13
-
-[node name="PulseGrowA" parent="." instance=ExtResource("18_pulsegrowsimple")]
-position = Vector2(108, -21150)
-
-[node name="PulseGrowB" parent="." instance=ExtResource("18_pulsegrowsimple")]
-position = Vector2(282, -21600)
-
-[node name="PulseGrowC" parent="." instance=ExtResource("18_pulsegrowsimple")]
-position = Vector2(115, -22050)
-
-[node name="CP13" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -22500)
-bg_number = 14
-
-[node name="PulseGrowHardA" parent="." instance=ExtResource("19_pulsegrow")]
-position = Vector2(108, -22950)
-
-[node name="PulseGrowHardB" parent="." instance=ExtResource("19_pulsegrow")]
-position = Vector2(282, -23400)
-
-[node name="PulseGrowHardC" parent="." instance=ExtResource("19_pulsegrow")]
-position = Vector2(115, -23850)
-
-[node name="CP14" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -24300)
-bg_number = 15
-
-[node name="PulseA" parent="." instance=ExtResource("3_pulse")]
-position = Vector2(108, -24750)
-level_randomize = true
-
-[node name="PulseB" parent="." instance=ExtResource("3_pulse")]
-position = Vector2(282, -25200)
-level_randomize = true
-
-[node name="PulseC" parent="." instance=ExtResource("3_pulse")]
-position = Vector2(115, -25650)
-level_randomize = true
-
-[node name="CP15" parent="." instance=ExtResource("1_checkpoint")]
-position = Vector2(195, -26100)
-bg_number = 16
-
-[node name="BarrierGap0" parent="." instance=ExtResource("21_barrier")]
-position = Vector2(0, -1125)
-
-[node name="BarrierGap1" parent="." instance=ExtResource("21_barrier")]
-position = Vector2(0, -1575)
-
-[node name="BarrierGap2" parent="." instance=ExtResource("21_barrier")]
-position = Vector2(0, -2025)
-
-[node name="BarrierGap3" parent="." instance=ExtResource("21_barrier")]
-position = Vector2(0, -2475)
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="."]
 layer = -1

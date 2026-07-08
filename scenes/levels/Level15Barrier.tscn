@@ -1,0 +1,39 @@
+[gd_scene load_steps=5 format=3 uid="uid://fenestra_level15_barrier"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn" id="2_arc"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+[ext_resource type="PackedScene" path="res://scenes/entities/Barrier.tscn" id="4_barrier"]
+
+[node name="Level15Barrier" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("BarrierArcA"), NodePath("BarrierArcB"), NodePath("BarrierArcC")])
+checkpoint_path = NodePath("Checkpoint")
+barrier_paths = Array[NodePath]([NodePath("BarrierGap0"), NodePath("BarrierGap1"), NodePath("BarrierGap2"), NodePath("BarrierGap3")])
+
+[node name="BarrierArcA" parent="." instance=ExtResource("2_arc")]
+position = Vector2(108, -450)
+level_randomize = true
+
+[node name="BarrierArcB" parent="." instance=ExtResource("2_arc")]
+position = Vector2(282, -900)
+level_randomize = true
+
+[node name="BarrierArcC" parent="." instance=ExtResource("2_arc")]
+position = Vector2(115, -1350)
+level_randomize = true
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)
+
+[node name="BarrierGap0" parent="." instance=ExtResource("4_barrier")]
+position = Vector2(0, -225)
+
+[node name="BarrierGap1" parent="." instance=ExtResource("4_barrier")]
+position = Vector2(0, -675)
+
+[node name="BarrierGap2" parent="." instance=ExtResource("4_barrier")]
+position = Vector2(0, -1125)
+
+[node name="BarrierGap3" parent="." instance=ExtResource("4_barrier")]
+position = Vector2(0, -1575)

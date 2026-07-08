@@ -211,6 +211,53 @@ Cada nível introduz **exatamente uma variável nova**. Nunca subir dois eixos d
 - Os dois nunca apertam juntos antes do nível 6+
 - Velocidade de rotação: eixo separado, sobe devagar e independentemente
 
+### Montagem da run — LevelChunk + modo sequencial/embaralhado
+
+Os 15 níveis **não** ficam mais hard-coded em posição absoluta dentro de `Game.tscn`.
+Cada nível é uma cena independente e **relocável** em `scenes/levels/` (`Level01Arc.tscn`
+… `Level15Barrier.tscn`), script `scripts/levels/LevelChunk.gd`. Dentro do chunk, tudo
+usa coordenadas **locais**: entrada em y=0, os 3 círculos de perigo em y=−450/−900/−1350
+e o checkpoint do próprio nível em y=−1800 (mesmo espaçamento de sempre). `LevelChunk`
+expõe `height` (1800 para todos os níveis atuais), `get_level_circles()` (os 3 perigos +
+checkpoint, em ordem) e `get_barriers()` (vazio, exceto no nível 15).
+
+Ao iniciar, `Game.gd` **não** monta mais o `circle_sequence` sozinho — ele pergunta ao
+player o modo via `UIOverlay.show_mode_select()` (tela cheia, dois botões: SEQUENCIAL /
+EMBARALHADO) e só monta a run depois da resposta:
+
+```gdscript
+@export var level_pool: Array[PackedScene] = []   # os 15 LevelChunk, em ordem canônica
+
+func _build_run(shuffled: bool) -> void:
+    circles.append(_circle_start)
+    var pool := level_pool.duplicate()
+    if shuffled:
+        pool.shuffle()
+    var entry_y := _circle_start.position.y
+    for i in pool.size():
+        var chunk: Node2D = pool[i].instantiate()
+        add_child(chunk)
+        chunk.position = Vector2(0.0, entry_y)          # todo o conteúdo do chunk é relativo a isso
+        var chunk_circles: Array[Node2D] = chunk.call("get_level_circles")
+        chunk_circles[-1].set("bg_number", i + 2)        # numeração da run, não do mecanismo
+        circles.append_array(chunk_circles)
+        _barrier_nodes.append_array(chunk.call("get_barriers"))
+        entry_y -= float(chunk.get("height"))
+```
+
+Trocar a ordem dos níveis (ou testar um nível isolado, ou adicionar um 16º) deixou de
+exigir recalcular posição de nada à mão — é só reordenar/editar `level_pool` ou embaralhar
+em runtime. `_run_ready` fica `false` até a run ser montada; `_process()` e
+`_unhandled_input()` ignoram tudo até lá, e a `UIOverlay` bloqueia o toque na tela com
+`mouse_filter = STOP` enquanto a escolha não é feita (mesmo mecanismo já usado pela tela
+de game over). O `bg_number` de cada checkpoint é atribuído em runtime pela posição na
+run montada (`i + 2`), não pelo nível/mecânica — por isso o número exibido é sempre 2‥16
+independente do modo escolhido.
+
+**Limitação atual:** a run ainda é *finita* (as 15 fases pré-definidas, montadas de uma vez
+no início) — não é geração infinita. Virar "endless" de verdade exigiria instanciar/liberar
+chunks sob demanda conforme o player se aproxima do fim, o que é um passo futuro.
+
 ---
 
 ## Estrutura do projeto Godot
@@ -220,7 +267,12 @@ fenestra/
 ├── project.godot
 ├── scenes/
 │   ├── game/
-│   │   └── Game.tscn                  # cena principal do demo (inclui Camera2D)
+│   │   └── Game.tscn                  # cena principal: CircleStart + level_pool (Camera2D, Player, UI)
+│   ├── levels/
+│   │   ├── Level01Arc.tscn            # 1 LevelChunk por nível — coordenadas locais, relocável
+│   │   ├── Level02Pulse.tscn
+│   │   ├── ...
+│   │   └── Level15Barrier.tscn        # inclui as 4 Barrier.tscn do nível
 │   ├── circles/
 │   │   ├── CircleBase.tscn            # template base (não usar diretamente em níveis)
 │   │   ├── CircleCheckpoint.tscn      # sem perigo, bg_number, respawn
@@ -240,26 +292,31 @@ fenestra/
 │   │   ├── Player.tscn                # personagem/bolinha (sem Camera2D)
 │   │   ├── Orbiter.tscn               # esfera orbitante
 │   │   ├── Item.tscn                  # item coletável (moeda, vida, escudo)
-│   │   └── ClockItem.tscn             # modificador de nível: limite de tempo
+│   │   ├── ClockItem.tscn             # modificador de nível: limite de tempo
+│   │   └── Barrier.tscn               # barreira horizontal com vão deslizante (nível 15)
 │   └── ui/
-│       ├── UI.tscn                    # HUD provisório (vidas, powerups, pause)
+│       ├── UI.tscn                    # HUD (vidas, escudo, moedas, pause) + tela de escolha de modo
 │       └── MainMenu.tscn              # pendente
 ├── scripts/
 │   ├── game/
-│   │   ├── Game.gd                    # lógica principal, input, checkpoint, câmera, paleta de cores
+│   │   ├── Game.gd                    # input, checkpoint, câmera, paleta; monta a run via LevelChunk
 │   │   └── SpikeWalls.gd              # desenho das paredes de spikes em screen space (CanvasLayer)
+│   ├── levels/
+│   │   └── LevelChunk.gd              # bloco de nível relocável: get_level_circles(), get_barriers(), height
 │   ├── circles/
 │   │   ├── Circle.gd                  # rotação, arcos, pulso, orbiters; set_ring_color(), set_thin_border()
 │   │   └── ArcVisual.gd               # desenho de arcos + eletricidade via _draw(); free_color, thin_border
 │   ├── entities/
-│   │   ├── Player.gd                  # movimento, colisão, morte, respawn com animação de pulo
+│   │   ├── Player.gd                  # movimento, colisão, morte, respawn, escudo (shield/invencibilidade)
 │   │   ├── Orbiter.gd                 # órbita, fade_and_free
 │   │   ├── Item.gd                    # item coletável: visual, collect(), sinal collected(type)
-│   │   └── ClockItem.gd               # modificador relógio: visual bob, collect(), sinal collected
+│   │   ├── ClockItem.gd               # modificador relógio: visual bob, collect(), sinal collected
+│   │   ├── Barrier.gd                 # vão deslizante ping-pong; is_open_at(world_x)
+│   │   └── ShieldBubble.gd            # círculo translúcido desenhado por cima da sprite com escudo ativo
 │   ├── fx/
 │   │   └── PixelBurst.gd              # partículas quadradas no ponto de contato ao pousar
 │   ├── ui/
-│   │   └── UIOverlay.gd               # desenho do HUD + lógica de pause
+│   │   └── UIOverlay.gd               # desenho do HUD, tela de escolha de modo, game over, pause
 │   └── PhaseConfig.gd                 # configuração de fase como Resource — pendente
 ├── assets/
 │   ├── audio/
@@ -385,7 +442,12 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - `fade_and_free()` — remoção suave (delega para stop_chasing se estiver perseguindo)
 
 ### Game.gd — responsabilidades
-- Mantém `circle_sequence: Array[NodePath]` (configurado no editor)
+- Mantém `level_pool: Array[PackedScene]` (os 15 `LevelChunk`, configurado no editor)
+- `_ready()`: conecta sinais do player e chama `_ui.show_mode_select()` — não monta nada ainda
+- `_on_mode_selected(shuffled)`: chama `_build_run(shuffled)` e depois `_finish_setup()`
+- `_build_run(shuffled)`: instancia cada chunk de `level_pool` (embaralhado ou não), encadeia via `chunk.position.y` acumulado por `height`, preenche `circles`/`_barrier_nodes` e atribui `bg_number = i + 2` a cada checkpoint (ver seção "Montagem da run")
+- `_finish_setup()`: paleta de cores, `_first_walls_index`, primeiro `attach_to_circle`, câmera inicial, `_spawn_items()`; termina setando `_run_ready = true`
+- `_process()` e `_unhandled_input()` retornam cedo enquanto `_run_ready == false`
 - `_draw()`: desenha linhas de conexão entre círculos consecutivos
 - Input: toque/clique → libera chasers do círculo atual → `player.move_to(next_circle)`
 - `_on_player_landed`: atualiza `current_index`; handles mirror/chasers/shrink/drift/grow/reverse; spikes visíveis **apenas** se o círculo atual tem `drift_enabled` ou `grow_enabled`; salva checkpoint se `bg_number > 0`; para o relógio se o player chegou no próximo checkpoint após o nível cronometrado
@@ -403,9 +465,10 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - Desenhado via `_draw()` num `Control` dentro de `CanvasLayer` (sempre visível, process_mode=ALWAYS)
 - Barra superior: fundo semi-transparente, 62px de altura
 - Esquerda: ícones de vida (3 no total; preenchidos = vidas restantes, contorno = perdidas)
-- Centro: 3 ícones de powerup (escudo, moeda, ímã) — visuais provisórios
+- Centro: ícone de escudo (aceso/preenchido quando `has_shield`, apagado quando não) + contador de moedas (`x<score>`)
 - Direita: ícone de pause `||`; `PauseBtn` (Button flat invisível) captura o toque e chama `get_tree().paused`
 - Barra de tempo do relógio: 8px imediatamente abaixo da top bar; visível apenas quando `_clock_active = true`; verde → amarelo → vermelho; pisca quando < 15% restante
+- `show_mode_select()`: tela cheia com dois botões (SEQUENCIAL / EMBARALHADO); bloqueia toque no jogo (`mouse_filter = STOP`) até escolher; emite `mode_selected(shuffled: bool)` e libera o input (`mouse_filter = IGNORE`) — mesmo mecanismo de `show_game_over()`, só que no início da partida
 
 ---
 
@@ -933,5 +996,7 @@ var _respawn_clock_item: Node2D = null   # referência ao item gerado no respawn
 27. Feedback visual/sonoro de morte diferenciado (blocked = vermelho seco, inactive = fade)
 27. `PhaseConfig.gd` como `Resource` para configurar níveis via editor
 28. HUD definitivo com score e combo (substituir UI provisória)
-29. Implementar efeitos dos itens coletados: ✅ escudo (anula a próxima morte + 1s de invencibilidade); TODO: score de moedas, restaurar vida
+29. Implementar efeitos dos itens coletados: ✅ escudo (anula a próxima morte + 1s de invencibilidade), ✅ moeda (soma ao score, contador na UI); TODO: restaurar vida
 30. Testar em dispositivo real desde cedo
+31. ✅ Barreiras deslizantes (`Barrier.tscn`) — nível 15 implementado (arco + vão horizontal em ping-pong nos 4 gaps do nível)
+32. ✅ Arquitetura de `LevelChunk` — os 15 níveis viraram cenas relocáveis (`scenes/levels/`) montadas em runtime por `Game._build_run()`; tela inicial deixa escolher run sequencial ou embaralhada (`UIOverlay.show_mode_select()`). Run ainda é finita — geração infinita sob demanda fica para depois

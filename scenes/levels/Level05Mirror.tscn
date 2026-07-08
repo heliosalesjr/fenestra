@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level05_mirror"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleMirror.tscn" id="2_mirror"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level05Mirror" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("MirrorA"), NodePath("MirrorB"), NodePath("MirrorC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="MirrorA" parent="." instance=ExtResource("2_mirror")]
+position = Vector2(105, -450)
+level_randomize = true
+
+[node name="MirrorB" parent="." instance=ExtResource("2_mirror")]
+position = Vector2(280, -900)
+level_randomize = true
+
+[node name="MirrorC" parent="." instance=ExtResource("2_mirror")]
+position = Vector2(112, -1350)
+level_randomize = true
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)

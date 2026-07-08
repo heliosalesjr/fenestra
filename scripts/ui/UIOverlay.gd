@@ -1,5 +1,7 @@
 extends Control
 
+signal mode_selected(shuffled: bool)
+
 # ─── Constantes de layout ────────────────────────────────────────────────────
 const VIEWPORT_W   := 390.0
 const VIEWPORT_H   := 844.0
@@ -23,6 +25,16 @@ const COIN_COLOR   := Color(1.0, 0.82, 0.15)
 const PAUSE_X      := 362.0
 const PAUSE_COLOR  := Color(1.0, 1.0, 1.0, 0.75)
 
+# Tela de escolha de modo (sequencial / embaralhado)
+const MODE_BTN_W    := VIEWPORT_W - 80.0
+const MODE_BTN_H    := 96.0
+const MODE_BTN_GAP  := 26.0
+const MODE_BTN_X    := 40.0
+const MODE_SEQ_Y    := VIEWPORT_H * 0.40
+const MODE_SHUF_Y   := MODE_SEQ_Y + MODE_BTN_H + MODE_BTN_GAP
+const MODE_SEQ_COLOR  := Color(0.2,  0.9,  0.3)
+const MODE_SHUF_COLOR := Color(0.82, 0.28, 0.95)
+
 # ─── Estado ──────────────────────────────────────────────────────────────────
 const MAX_LIVES    := 3
 var lives: int     = MAX_LIVES
@@ -32,10 +44,19 @@ var _clock_active:   bool  = false
 var _clock_progress: float = 1.0
 var _shield_active:  bool  = false
 var score: int = 0
+var _mode_select_active: bool = false
 
 
 func _ready() -> void:
 	$PauseBtn.pressed.connect(_on_pause_btn_pressed)
+
+
+func _mode_seq_rect() -> Rect2:
+	return Rect2(MODE_BTN_X, MODE_SEQ_Y, MODE_BTN_W, MODE_BTN_H)
+
+
+func _mode_shuffle_rect() -> Rect2:
+	return Rect2(MODE_BTN_X, MODE_SHUF_Y, MODE_BTN_W, MODE_BTN_H)
 
 
 # ─── API pública ──────────────────────────────────────────────────────────────
@@ -78,6 +99,23 @@ func show_game_over() -> void:
 	queue_redraw()
 
 
+## Mostra a tela inicial de escolha de modo e bloqueia o input do jogo até
+## o player tocar em um dos dois botões (emite `mode_selected`).
+func show_mode_select() -> void:
+	_mode_select_active = true
+	mouse_filter = MOUSE_FILTER_STOP
+	$PauseBtn.visible = false
+	queue_redraw()
+
+
+func _finish_mode_select(shuffled: bool) -> void:
+	_mode_select_active = false
+	mouse_filter = MOUSE_FILTER_IGNORE
+	$PauseBtn.visible = true
+	queue_redraw()
+	mode_selected.emit(shuffled)
+
+
 # ─── Desenho ─────────────────────────────────────────────────────────────────
 func _draw() -> void:
 	draw_rect(Rect2(0, 0, VIEWPORT_W, BAR_H), Color(0.0, 0.0, 0.0, 0.42))
@@ -89,6 +127,8 @@ func _draw() -> void:
 		_draw_clock_bar()
 	if _game_over:
 		_draw_game_over()
+	if _mode_select_active:
+		_draw_mode_select()
 
 
 func _draw_lives() -> void:
@@ -177,17 +217,64 @@ func _draw_game_over() -> void:
 		sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_size, Color(1.0, 1.0, 1.0, 0.5))
 
 
+func _draw_mode_select() -> void:
+	draw_rect(Rect2(0, 0, VIEWPORT_W, VIEWPORT_H), Color(0.0, 0.0, 0.05, 0.94))
+	var font: Font = ThemeDB.fallback_font
+
+	var title      := "ESCOLHA O MODO"
+	var title_size := 30
+	var tw := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
+	draw_string(font, Vector2((VIEWPORT_W - tw) * 0.5, MODE_SEQ_Y - 50.0),
+		title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size, Color(1.0, 1.0, 1.0, 0.9))
+
+	_draw_mode_button(_mode_seq_rect(), MODE_SEQ_COLOR,
+		"SEQUENCIAL", "os 15 níveis na ordem original")
+	_draw_mode_button(_mode_shuffle_rect(), MODE_SHUF_COLOR,
+		"EMBARALHADO", "os 15 níveis em ordem sorteada")
+
+
+func _draw_mode_button(rect: Rect2, color: Color, label: String, subtitle: String) -> void:
+	var font: Font = ThemeDB.fallback_font
+	draw_rect(rect, Color(color, 0.16))
+	draw_rect(rect, Color(color, 0.9), false, 2.0)
+
+	var label_size := 24
+	draw_string(font, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.44),
+		label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, label_size, Color.WHITE)
+
+	var sub_size := 13
+	draw_string(font, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.72),
+		subtitle, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, sub_size, Color(1.0, 1.0, 1.0, 0.6))
+
+
 # ─── Input ────────────────────────────────────────────────────────────────────
 
 func _gui_input(event: InputEvent) -> void:
-	if not _game_over:
-		return
-	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
-		get_tree().reload_current_scene()
+	var pos: Vector2
+	var pressed: bool
+	if event is InputEventScreenTouch:
+		var t := event as InputEventScreenTouch
+		pos     = t.position
+		pressed = t.pressed
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-			get_tree().reload_current_scene()
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		pos     = mb.position
+		pressed = mb.pressed
+	else:
+		return
+
+	if not pressed:
+		return
+
+	if _mode_select_active:
+		if _mode_seq_rect().has_point(pos):
+			_finish_mode_select(false)
+		elif _mode_shuffle_rect().has_point(pos):
+			_finish_mode_select(true)
+	elif _game_over:
+		get_tree().reload_current_scene()
 
 
 # ─── Pause ───────────────────────────────────────────────────────────────────

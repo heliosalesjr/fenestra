@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level04_chaser"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleChaser.tscn" id="2_chaser"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level04Chaser" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("ChaserA"), NodePath("ChaserB"), NodePath("ChaserC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="ChaserA" parent="." instance=ExtResource("2_chaser")]
+position = Vector2(108, -450)
+level_randomize = true
+
+[node name="ChaserB" parent="." instance=ExtResource("2_chaser")]
+position = Vector2(282, -900)
+level_randomize = true
+
+[node name="ChaserC" parent="." instance=ExtResource("2_chaser")]
+position = Vector2(115, -1350)
+level_randomize = true
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)

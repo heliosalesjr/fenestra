@@ -1,8 +1,8 @@
 extends Node2D
 
-@export var circle_sequence: Array[NodePath] = []
-## Barreiras com vão deslizante (Barrier.tscn) — checadas durante o voo do player.
-@export var barriers: Array[NodePath] = []
+## Catálogo de níveis disponíveis (LevelChunk.tscn) — a run é montada a partir
+## daqui, sequencial ou embaralhada, conforme a escolha do player em _ready().
+@export var level_pool: Array[PackedScene] = []
 
 ## Probabilidade de um item aparecer entre cada par de círculos (0.0 = nunca, 1.0 = sempre).
 @export var item_spawn_chance: float = 0.4
@@ -13,11 +13,12 @@ extends Node2D
 ## bg_numbers dos níveis que devem ter relógio antes do primeiro círculo.
 @export var clock_before_levels: Array[int] = [2, 3, 4]
 
-@onready var player: Node2D        = $Player
-@onready var _camera: Camera2D     = $Camera2D
-@onready var _ui: Control          = $UI/TopBar
-@onready var _spike_walls: Node2D  = $SpikeLayer/SpikeWalls
-@onready var _background: Node2D   = $BackgroundLayer/Background
+@onready var player: Node2D         = $Player
+@onready var _camera: Camera2D      = $Camera2D
+@onready var _ui: Control           = $UI/TopBar
+@onready var _spike_walls: Node2D   = $SpikeLayer/SpikeWalls
+@onready var _background: Node2D    = $BackgroundLayer/Background
+@onready var _circle_start: Node2D  = $CircleStart
 
 var circles: Array[Node2D] = []
 var _items:  Array[Node2D] = []
@@ -29,6 +30,7 @@ const MAX_LIVES := 3
 var lives: int = MAX_LIVES
 var score: int = 0
 var _first_walls_index: int = -1   # primeiro círculo com drift ou grow (ativa spikes)
+var _run_ready: bool = false       # true só depois que o player escolhe o modo e a run é montada
 
 var _clock_active:             bool   = false
 var _clock_time_left:          float  = 0.0
@@ -65,11 +67,50 @@ var _cam_zoom: float   = 1.0
 
 
 func _ready() -> void:
-	for path in circle_sequence:
-		circles.append(get_node(path))
-	for path in barriers:
-		_barrier_nodes.append(get_node(path))
+	player.player_died.connect(_on_player_died)
+	player.landed_on.connect(_on_player_landed)
+	player.shield_broken.connect(_on_shield_broken)
 
+	_ui.mode_selected.connect(_on_mode_selected)
+	_ui.show_mode_select()
+
+
+## Chamado pela UI depois que o player escolhe sequencial ou embaralhado.
+## A partir daqui a run é montada e o jogo de fato começa.
+func _on_mode_selected(shuffled: bool) -> void:
+	_build_run(shuffled)
+	_finish_setup()
+
+
+## Monta a sequência de círculos da partida a partir de `level_pool`, instanciando
+## cada LevelChunk e encadeando um logo acima do outro (ver LevelChunk.gd).
+## Sequencial = ordem de `level_pool`; embaralhado = mesma lista, ordem sorteada.
+func _build_run(shuffled: bool) -> void:
+	circles.append(_circle_start)
+
+	var pool := level_pool.duplicate()
+	if shuffled:
+		pool.shuffle()
+
+	var entry_y := _circle_start.position.y
+	for i in pool.size():
+		var chunk: Node2D = (pool[i] as PackedScene).instantiate()
+		add_child(chunk)
+		chunk.position = Vector2(0.0, entry_y)
+
+		var chunk_circles: Array[Node2D] = chunk.call("get_level_circles")
+		var checkpoint := chunk_circles[chunk_circles.size() - 1]
+		checkpoint.set("bg_number", i + 2)
+		circles.append_array(chunk_circles)
+		_barrier_nodes.append_array(chunk.call("get_barriers"))
+
+		entry_y -= float(chunk.get("height"))
+
+
+## Tudo que dependia de `circles` já estar montado — câmera, paleta, spawn de
+## itens e o primeiro attach do player. Antes disso o jogo fica pausado
+## esperando a escolha do modo (ver `_run_ready`).
+func _finish_setup() -> void:
 	var palette_idx := 0
 	for i in circles.size():
 		if circles[i].get("bg_number") > 0:
@@ -82,12 +123,7 @@ func _ready() -> void:
 			_first_walls_index = i
 			break
 
-	player.player_died.connect(_on_player_died)
-	player.landed_on.connect(_on_player_landed)
-	player.shield_broken.connect(_on_shield_broken)
-
-	if circles.size() > 0:
-		player.attach_to_circle(circles[0])
+	player.attach_to_circle(circles[0])
 
 	# Inicializa câmera sem lerp para evitar salto no primeiro frame
 	_cam_zoom = _target_zoom()
@@ -96,10 +132,13 @@ func _ready() -> void:
 	_camera.zoom = Vector2(_cam_zoom, _cam_zoom)
 
 	_spawn_items()
+	_run_ready = true
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
+	if not _run_ready:
+		return
 	_update_camera(delta)
 	_follow_drift_circle()
 	_check_grow_wall()
@@ -164,8 +203,8 @@ func _follow_drift_circle() -> void:
 			var half_w: float    = (VIEWPORT_W * 0.5) / _cam_zoom
 			var wall_left: float  = _cam_pos.x - half_w
 			var wall_right: float = _cam_pos.x + half_w
-			if cur.position.x - radius <= wall_left or \
-			   cur.position.x + radius >= wall_right:
+			if cur.global_position.x - radius <= wall_left or \
+			   cur.global_position.x + radius >= wall_right:
 				cur.call("trigger_drift_explode")
 	if not needs_redraw:
 		for c in circles:
@@ -186,8 +225,8 @@ func _check_grow_wall() -> void:
 	var half_w: float    = (VIEWPORT_W * 0.5) / _cam_zoom
 	var wall_left: float  = _cam_pos.x - half_w
 	var wall_right: float = _cam_pos.x + half_w
-	if cur.position.x - radius <= wall_left or \
-	   cur.position.x + radius >= wall_right:
+	if cur.global_position.x - radius <= wall_left or \
+	   cur.global_position.x + radius >= wall_right:
 		cur.call("trigger_grow_explode")
 
 
@@ -204,7 +243,7 @@ func _spawn_items() -> void:
 		if bg_n > 0 and clock_before_levels.has(bg_n) and i > 0:
 			var gap_idx := i - 1
 			clock_gaps[gap_idx] = true
-			var mid := (circles[gap_idx].position + circles[i].position) * 0.5
+			var mid := (circles[gap_idx].global_position + circles[i].global_position) * 0.5
 			var clock_item: Node2D = clock_scene.instantiate()
 			clock_item.position = mid
 			clock_item.set_meta("circle_a", circles[gap_idx])
@@ -218,7 +257,7 @@ func _spawn_items() -> void:
 			continue
 		if randf() > item_spawn_chance:
 			continue
-		var mid := (circles[i].position + circles[i + 1].position) * 0.5
+		var mid := (circles[i].global_position + circles[i + 1].global_position) * 0.5
 		var item: Node2D = item_scene.instantiate()
 		item.set("item_type", _random_item_type())
 		item.position = mid
@@ -238,7 +277,7 @@ func _update_item_positions() -> void:
 		var ca := item.get_meta("circle_a") as Node2D
 		var cb := item.get_meta("circle_b") as Node2D
 		if is_instance_valid(ca) and is_instance_valid(cb):
-			item.position = (ca.position + cb.position) * 0.5
+			item.position = (ca.global_position + cb.global_position) * 0.5
 
 
 ## Checa se o player cruzou a altura (Y) de alguma barreira neste frame e, se cruzou,
@@ -349,8 +388,8 @@ func _on_shield_broken() -> void:
 func _draw() -> void:
 	for i in range(circles.size() - 1):
 		draw_line(
-			circles[i].position,
-			circles[i + 1].position,
+			circles[i].global_position,
+			circles[i + 1].global_position,
 			Color(0.65, 0.65, 0.65, 0.3),
 			1.5
 		)
@@ -359,6 +398,8 @@ func _draw() -> void:
 # ─── Input ───────────────────────────────────────────────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not _run_ready:
+		return
 	if player.state != player.State.ON_CIRCLE:
 		return
 	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
@@ -510,7 +551,7 @@ func _spawn_respawn_clock() -> void:
 		_items.erase(_respawn_clock_item)
 		_respawn_clock_item.queue_free()
 	var clock_scene := preload("res://scenes/entities/ClockItem.tscn")
-	var mid := (circles[last_checkpoint_index].position + circles[next_idx].position) * 0.5
+	var mid := (circles[last_checkpoint_index].global_position + circles[next_idx].global_position) * 0.5
 	_respawn_clock_item = clock_scene.instantiate()
 	_respawn_clock_item.position = mid
 	_respawn_clock_item.set_meta("circle_a", circles[last_checkpoint_index])

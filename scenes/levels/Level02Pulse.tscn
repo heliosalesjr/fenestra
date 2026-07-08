@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level02_pulse"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CirclePulse.tscn" id="2_pulse"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level02Pulse" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("PulseA"), NodePath("PulseB"), NodePath("PulseC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="PulseA" parent="." instance=ExtResource("2_pulse")]
+position = Vector2(82, -450)
+level_randomize = true
+
+[node name="PulseB" parent="." instance=ExtResource("2_pulse")]
+position = Vector2(290, -900)
+level_randomize = true
+
+[node name="PulseC" parent="." instance=ExtResource("2_pulse")]
+position = Vector2(150, -1350)
+level_randomize = true
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(225, -1800)
+circle_radius = 70.0

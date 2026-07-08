@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level07_drift"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleDrift.tscn" id="2_drift"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level07Drift" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("DriftA"), NodePath("DriftB"), NodePath("DriftC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="DriftA" parent="." instance=ExtResource("2_drift")]
+position = Vector2(175, -450)
+level_randomize = true
+
+[node name="DriftB" parent="." instance=ExtResource("2_drift")]
+position = Vector2(215, -900)
+level_randomize = true
+
+[node name="DriftC" parent="." instance=ExtResource("2_drift")]
+position = Vector2(190, -1350)
+level_randomize = true
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)

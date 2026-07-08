@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level14_pulsegrowhard"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CirclePulseGrow.tscn" id="2_pulsegrow"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level14PulseGrowHard" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("PulseGrowHardA"), NodePath("PulseGrowHardB"), NodePath("PulseGrowHardC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="PulseGrowHardA" parent="." instance=ExtResource("2_pulsegrow")]
+position = Vector2(108, -450)
+
+[node name="PulseGrowHardB" parent="." instance=ExtResource("2_pulsegrow")]
+position = Vector2(282, -900)
+
+[node name="PulseGrowHardC" parent="." instance=ExtResource("2_pulsegrow")]
+position = Vector2(115, -1350)
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)

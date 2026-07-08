@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level01_arc"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleArc.tscn" id="2_arc"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level01Arc" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("ArcA"), NodePath("ArcB"), NodePath("ArcC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="ArcA" parent="." instance=ExtResource("2_arc")]
+position = Vector2(95, -450)
+level_randomize = true
+
+[node name="ArcB" parent="." instance=ExtResource("2_arc")]
+position = Vector2(295, -900)
+level_randomize = true
+
+[node name="ArcC" parent="." instance=ExtResource("2_arc")]
+position = Vector2(130, -1350)
+level_randomize = true
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(255, -1800)
+circle_radius = 70.0

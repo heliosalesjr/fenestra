@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://fenestra_level10_reverse"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelChunk.gd" id="1_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleReverse.tscn" id="2_reverse"]
+[ext_resource type="PackedScene" path="res://scenes/circles/CircleCheckpoint.tscn" id="3_checkpoint"]
+
+[node name="Level10Reverse" type="Node2D"]
+script = ExtResource("1_chunk")
+trick_circles = Array[NodePath]([NodePath("RevA"), NodePath("RevB"), NodePath("RevC")])
+checkpoint_path = NodePath("Checkpoint")
+
+[node name="RevA" parent="." instance=ExtResource("2_reverse")]
+position = Vector2(108, -450)
+
+[node name="RevB" parent="." instance=ExtResource("2_reverse")]
+position = Vector2(282, -900)
+
+[node name="RevC" parent="." instance=ExtResource("2_reverse")]
+position = Vector2(115, -1350)
+
+[node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]
+position = Vector2(195, -1800)
