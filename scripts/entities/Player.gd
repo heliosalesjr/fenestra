@@ -18,6 +18,7 @@ enum State { ON_CIRCLE, MOVING, DEAD }
 
 const SHIELD_INVULN_DURATION := 1.0
 const SHIELD_FLASH_MODULATE  := Color(2.2, 5.2, 8.5, 1.0)   # bloom azulado, mesmo truque HDR do resto do sprite
+const ROCKET_FLASH_MODULATE  := Color(8.5, 4.0, 1.2, 1.0)   # bloom alaranjado, mesmo truque HDR
 const NEUTRAL_MODULATE       := Color(6.34502, 6.34502, 6.34502, 1.0)
 
 var state: State = State.ON_CIRCLE
@@ -27,6 +28,10 @@ var _active_tween: Tween = null
 var has_shield: bool = false
 var _invuln_timer: float = 0.0
 var _respawn_invuln_timer: float = 0.0
+
+## Powerup Rocket: enquanto true, o player é invulnerável a qualquer morte
+## (arco/laser/orbiter/barreira/etc) e o Game.gd pilota os pulos automaticamente.
+var rocket_active: bool = false
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var shield_bubble: Node2D = $ShieldBubble
@@ -53,6 +58,11 @@ func _process(delta: float) -> void:
 		if _invuln_timer == 0.0:
 			sprite.modulate = NEUTRAL_MODULATE
 
+	if rocket_active:
+		var blink := sin(Time.get_ticks_msec() * 0.05) > 0.0
+		sprite.modulate = ROCKET_FLASH_MODULATE if blink else NEUTRAL_MODULATE
+		queue_redraw()
+
 	if state == State.MOVING and destination_circle:
 		_check_orbiter_collision()
 	elif state == State.ON_CIRCLE and current_circle:
@@ -73,6 +83,15 @@ func attach_to_circle(circle: Node2D) -> void:
 func set_shield(active: bool) -> void:
 	has_shield = active
 	shield_bubble.set_active(active)
+
+
+## Ativa/desativa a invencibilidade do powerup Rocket (ver Game.gd, que pilota
+## os pulos automáticos enquanto isto estiver true).
+func set_rocket_active(active: bool) -> void:
+	rocket_active = active
+	if not active and _invuln_timer <= 0.0:
+		sprite.modulate = NEUTRAL_MODULATE
+		queue_redraw()
 
 
 ## Tenta salvar o player de uma morte usando o escudo ou a invencibilidade
@@ -133,7 +152,7 @@ func _on_arrived() -> void:
 		return
 	var from_pos := current_circle.global_position if current_circle else global_position
 	var approach_angle_deg := rad_to_deg((from_pos - circle.global_position).angle())
-	if circle.is_landing_valid(approach_angle_deg) or _try_shield_save():
+	if circle.is_landing_valid(approach_angle_deg) or rocket_active or _try_shield_save():
 		var outward_dir := (from_pos - circle.global_position).normalized()
 		var radius: float = circle.get("circle_radius")
 		var arc_visual := circle.get_node_or_null("RotationRoot/ArcVisual")
@@ -262,6 +281,8 @@ func force_die(reason: String) -> void:
 
 func _die(reason: String) -> void:
 	if _respawn_invuln_timer > 0.0:
+		return
+	if rocket_active:
 		return
 	if _try_shield_save():
 		return

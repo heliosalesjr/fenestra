@@ -67,6 +67,19 @@ const CAM_ZOOM_SMOOTH := 3.5
 var _cam_pos:  Vector2 = Vector2.ZERO
 var _cam_zoom: float   = 1.0
 
+# Câmera — tremor ("trauma" decai com o tempo; offset escala com trauma²
+# para um tranco forte no início e suavizar rápido no fim).
+var _cam_trauma: float = 0.0
+const CAM_TRAUMA_DECAY      := 2.2
+const CAM_SHAKE_MAX_OFFSET  := 18.0
+
+
+# ─── Powerup Rocket ────────────────────────────────────────────────────────
+## Quando true, o Game pilota os pulos automáticos do player (ver _rocket_advance).
+var _rocket_active: bool      = false
+var _rocket_jumps_left: int   = 0
+var _rocket_extended: bool    = false
+
 
 func _ready() -> void:
 	player.player_died.connect(_on_player_died)
@@ -160,8 +173,29 @@ func _update_camera(delta: float) -> void:
 	var tp := _target_pos(_cam_zoom)
 	_cam_pos = _cam_pos.lerp(tp, delta * CAM_POS_SMOOTH)
 
-	_camera.global_position = _cam_pos
+	var shake_offset := Vector2.ZERO
+	if _cam_trauma > 0.0:
+		_cam_trauma = maxf(0.0, _cam_trauma - CAM_TRAUMA_DECAY * delta)
+		var amount := _cam_trauma * _cam_trauma
+		shake_offset = Vector2(
+			randf_range(-1.0, 1.0) * CAM_SHAKE_MAX_OFFSET * amount,
+			randf_range(-1.0, 1.0) * CAM_SHAKE_MAX_OFFSET * amount
+		)
+
+	_camera.global_position = _cam_pos + shake_offset
 	_camera.zoom = Vector2(_cam_zoom, _cam_zoom)
+
+
+## Adiciona "trauma" de câmera (0-1). O tremor decai sozinho em CAM_TRAUMA_DECAY.
+func _camera_shake(trauma: float) -> void:
+	_cam_trauma = clampf(_cam_trauma + trauma, 0.0, 1.0)
+
+
+func _spawn_boom(pos: Vector2) -> void:
+	var boom := preload("res://scripts/fx/RocketBoom.gd").new()
+	add_child(boom)
+	boom.global_position = pos
+	boom.fire()
 
 
 func _next_circle() -> Node2D:
@@ -268,6 +302,31 @@ func _spawn_items() -> void:
 		add_child(item)
 		item.connect("collected", _on_item_collected)
 		_items.append(item)
+
+	_spawn_rocket_item()
+
+
+## Spawn de teste do powerup Rocket: aparece sempre no vão logo após o primeiro
+## checkpoint (bg_number == 2, o "início do segundo nível"), qualquer que seja
+## o LevelChunk sorteado ali — funciona tanto no modo sequencial quanto embaralhado.
+func _spawn_rocket_item() -> void:
+	var idx := -1
+	for i in circles.size():
+		if circles[i].bg_number == 2:
+			idx = i
+			break
+	if idx == -1 or idx + 1 >= circles.size():
+		return
+
+	var rocket_scene := preload("res://scenes/entities/RocketItem.tscn")
+	var mid := (circles[idx].global_position + circles[idx + 1].global_position) * 0.5
+	var rocket: Node2D = rocket_scene.instantiate()
+	rocket.position = mid
+	rocket.set_meta("circle_a", circles[idx])
+	rocket.set_meta("circle_b", circles[idx + 1])
+	add_child(rocket)
+	rocket.connect("collected", _on_rocket_collected)
+	_items.append(rocket)
 
 
 func _update_item_positions() -> void:
@@ -385,6 +444,41 @@ func _on_shield_broken() -> void:
 	_ui.set_shield(false)
 
 
+# ─── Rocket ──────────────────────────────────────────────────────────────────
+
+## Ao coletar, o player fica invencível e o Game passa a pilotar os pulos
+## automaticamente (ver _rocket_advance, chamado a cada pouso via landed_on).
+func _on_rocket_collected() -> void:
+	_rocket_active       = true
+	_rocket_jumps_left   = 2
+	_rocket_extended     = false
+	player.set_rocket_active(true)
+	_camera_shake(0.6)
+	_spawn_boom(player.global_position)
+
+
+## Chamado a cada pouso enquanto o Rocket está ativo. Conta o pouso, estende a
+## sequência em +1 pulo se o círculo for um checkpoint "vazio" (bg_number > 0,
+## sem perigo — ver CircleCheckpoint.tscn), e encadeia o próximo pulo sozinho.
+func _rocket_advance(landed_circle: Circle) -> void:
+	_rocket_jumps_left -= 1
+	if landed_circle.bg_number > 0 and not _rocket_extended:
+		_rocket_extended = true
+		_rocket_jumps_left += 1
+
+	_camera_shake(0.5)
+	_spawn_boom(landed_circle.global_position)
+
+	if _rocket_jumps_left <= 0 or circles.size() < 2:
+		_rocket_active = false
+		player.set_rocket_active(false)
+		return
+
+	_leave_circle_cleanup(current_index)
+	var next_idx := (current_index + 1) % circles.size()
+	player.move_to(circles[next_idx])
+
+
 # ─── Desenho ─────────────────────────────────────────────────────────────────
 
 func _draw() -> void:
@@ -415,7 +509,16 @@ func _unhandled_input(event: InputEvent) -> void:
 func _jump_to_next() -> void:
 	if circles.size() < 2:
 		return
-	var cur := circles[current_index]
+	_leave_circle_cleanup(current_index)
+	var next_idx := (current_index + 1) % circles.size()
+	player.move_to(circles[next_idx])
+
+
+## Encerra os efeitos de perigo do círculo que está sendo deixado (chasers,
+## shrink, drift, grow, poison, reverse). Usado tanto no pulo manual (tap)
+## quanto no encadeamento automático do powerup Rocket.
+func _leave_circle_cleanup(idx: int) -> void:
+	var cur := circles[idx]
 	if cur.orbiter_chaser:
 		cur.release_chasers()
 	if cur.shrink_enabled:
@@ -432,8 +535,6 @@ func _jump_to_next() -> void:
 		_disconnect_poison(cur)
 	if cur.reverse_enabled:
 		cur.stop_reversing()
-	var next_idx := (current_index + 1) % circles.size()
-	player.move_to(circles[next_idx])
 
 
 # ─── Sinais do player ────────────────────────────────────────────────────────
@@ -473,6 +574,9 @@ func _on_player_landed(circle_node: Node2D) -> void:
 		last_checkpoint_index = current_index
 		if _clock_active and current_index > _clock_start_circle_index:
 			_stop_clock()
+
+	if _rocket_active:
+		_rocket_advance(circle)
 
 
 func _on_shrink_exploded() -> void:
