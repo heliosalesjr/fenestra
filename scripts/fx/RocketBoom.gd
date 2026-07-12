@@ -23,14 +23,19 @@ const COLORS: Array[Color] = [
 
 var _particles: Array = []
 var _age: float = 0.0
+var _scale_mult: float = 1.0
 
 
-func fire() -> void:
-	for i in PARTICLE_COUNT:
+## `scale_mult` escala tamanho do anel de choque e quantidade/tamanho das
+## fagulhas — usado pelo Rocket para deixar tiers mais altos mais dramáticos.
+func fire(scale_mult: float = 1.0) -> void:
+	_scale_mult = scale_mult
+	var count := int(round(PARTICLE_COUNT * scale_mult))
+	for i in count:
 		var angle := randf() * TAU
 		var dir   := Vector2(cos(angle), sin(angle))
 		var speed := randf_range(SPEED_MIN, SPEED_MAX)
-		var sz    := PIXEL_SIZE * randf_range(0.7, 1.6)
+		var sz    := PIXEL_SIZE * randf_range(0.7, 1.6) * scale_mult
 		_particles.append({
 			"pos":   Vector2.ZERO,
 			"vel":   dir * speed,
@@ -58,7 +63,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if _age < RING_LIFETIME:
 		var t     := _age / RING_LIFETIME
-		var r     := lerpf(10.0, RING_MAX_RADIUS, t)
+		var r     := lerpf(10.0, RING_MAX_RADIUS * _scale_mult, t)
 		var alpha := 1.0 - t
 		draw_arc(Vector2.ZERO, r,       0.0, TAU, 40, Color(1.0, 0.75, 0.25, alpha * 0.85), 4.0)
 		draw_arc(Vector2.ZERO, r * 0.6, 0.0, TAU, 32, Color(1.0, 1.0,  0.85, alpha * 0.6),  2.0)

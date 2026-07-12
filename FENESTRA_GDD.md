@@ -321,6 +321,9 @@ fenestra/
 │   │   ├── Orbiter.tscn               # esfera orbitante
 │   │   ├── Item.tscn                  # item coletável (moeda, vida, escudo)
 │   │   ├── ClockItem.tscn             # modificador de nível: limite de tempo
+│   │   ├── RocketItem.tscn            # powerup: pulo automático invencível, nível 1 (3 círculos)
+│   │   ├── RocketItemLvl2.tscn        # variante nível 2 (4 círculos) — instância de RocketItem.tscn
+│   │   ├── RocketItemLvl3.tscn        # variante nível 3 (5 círculos) — instância de RocketItem.tscn
 │   │   └── Barrier.tscn               # barreira horizontal com vão deslizante (nível 15)
 │   └── ui/
 │       ├── UI.tscn                    # HUD (vidas, escudo, moedas, pause) + tela de escolha de modo
@@ -335,14 +338,16 @@ fenestra/
 │   │   ├── Circle.gd                  # rotação, arcos, pulso, orbiters; set_ring_color(), set_thin_border()
 │   │   └── ArcVisual.gd               # desenho de arcos + eletricidade via _draw(); free_color, thin_border
 │   ├── entities/
-│   │   ├── Player.gd                  # movimento, colisão, morte, respawn, escudo (shield/invencibilidade)
+│   │   ├── Player.gd                  # movimento, colisão, morte, respawn, escudo e rocket (invencibilidade)
 │   │   ├── Orbiter.gd                 # órbita, fade_and_free
 │   │   ├── Item.gd                    # item coletável: visual, collect(), sinal collected(type)
 │   │   ├── ClockItem.gd               # modificador relógio: visual bob, collect(), sinal collected
+│   │   ├── RocketItem.gd              # powerup rocket: visual por nível (1-3), collect(), sinal collected(level)
 │   │   ├── Barrier.gd                 # vão deslizante ping-pong; is_open_at(world_x)
 │   │   └── ShieldBubble.gd            # círculo translúcido desenhado por cima da sprite com escudo ativo
 │   ├── fx/
-│   │   └── PixelBurst.gd              # partículas quadradas no ponto de contato ao pousar
+│   │   ├── PixelBurst.gd              # partículas quadradas no ponto de contato ao pousar
+│   │   └── RocketBoom.gd              # onda de choque + fagulhas do powerup Rocket (maior/mais dramático)
 │   ├── ui/
 │   │   └── UIOverlay.gd               # desenho do HUD, tela de escolha de modo, game over, pause
 │   └── PhaseConfig.gd                 # configuração de fase como Resource — pendente
@@ -445,6 +450,7 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - Ao chegar: calcula o ângulo de aproximação e chama `circle.is_landing_valid()`
 - Em caso de morte: fica vermelho, emite `player_died(reason)`
 - `force_die(reason)` — morte forçada por fonte externa (ex: shrink_exploded); protege contra double-die
+- `rocket_active: bool` + `set_rocket_active(bool)` — enquanto true, `_die()` retorna sem matar e o pouso em `_on_arrived()` é sempre aceito (ver powerup Rocket, seção "Modificadores de nível")
 - Estados: `ON_CIRCLE` | `MOVING` | `DEAD`
 - Sinais: `landed_on(circle)`, `player_died(reason)`
 - **Não possui Camera2D** — câmera é controlada por `Game.gd`
@@ -488,6 +494,8 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 - `_check_grow_wall()`: a cada frame, verifica se `_grow_radius` do círculo atual toca borda da tela (world space = `cam_pos.x ± VIEWPORT_W/2/zoom`); chama `trigger_grow_explode()` se necessário
 - `_update_clock(delta)`: decrementa `_clock_time_left`; atualiza barra via `_ui.update_clock_bar(progress)`; chama `player.force_die("clock")` quando zera
 - `_spawn_respawn_clock()`: cria um `ClockItem` entre círculo[last_checkpoint] e círculo[last_checkpoint+1]; destrói o item anterior se ainda existia
+- `_on_rocket_collected(level)` / `_rocket_advance(circle)`: pilotam o powerup Rocket — pulos automáticos, invencibilidade, câmera com tremor e boom (ver "Modificadores de nível")
+- `_leave_circle_cleanup(idx)`: encerra os efeitos de perigo do círculo deixado (chasers/shrink/drift/grow/poison/reverse); extraído de `_jump_to_next()` para ser reaproveitado pelo pulo automático do Rocket
 - `SpikeLayer/SpikeWalls` (`SpikeWalls.gd`): `Node2D` dentro de `CanvasLayer` (layer=1); desenha paredes de spikes em screen space (x=0 e x=390), fixas e independentes da câmera; visíveis **apenas** nos círculos com `drift_enabled` ou `grow_enabled` (toggleado a cada `_on_player_landed`)
 - **Controla a Camera2D** via `_update_camera(delta)` a cada frame (ver seção Câmera)
 
@@ -585,6 +593,8 @@ Desenhadas via `_draw()` no nó raiz do Game.
 Ambos Y e zoom são interpolados com `lerp` a cada frame (pos smooth=6.0, zoom smooth=3.5). Câmera inicializada sem lerp em `_ready()` para evitar salto de abertura.
 
 Durante o movimento do player (`State.MOVING`), o "próximo círculo" para cálculo da câmera já é o `destination_circle`, antecipando a transição suavemente.
+
+**Tremor de câmera ("trauma"):** `_cam_trauma` (0–1) é somado por eventos dramáticos (hoje, só o powerup Rocket) e decai sozinho a `CAM_TRAUMA_DECAY = 2.2`/s. O offset aplicado à posição final é aleatório em X/Y, escalado por `trauma² × CAM_SHAKE_MAX_OFFSET (18px)` — queda de intensidade rápida no final, tranco forte no início. API: `_camera_shake(trauma: float)` soma trauma (clamp 0–1); aplicado em `_update_camera()` por cima do `_cam_pos` já interpolado.
 
 ### Layout horizontal dos círculos
 
@@ -931,6 +941,65 @@ var _clock_start_circle_index: int = -1  # índice do 1º círculo do nível cro
 var _respawn_clock_item: Node2D = null   # referência ao item gerado no respawn
 ```
 
+### Rocket (`RocketItem`)
+
+Powerup de **pulo automático invencível**: ao coletar, o player atravessa sozinho os próximos círculos, ignorando qualquer perigo neles, com câmera tremendo e um "boom" a cada círculo passado.
+
+**3 níveis prontos para uso**, todos implementados em `RocketItem.gd`/`RocketItem.tscn` via `@export_range(1,3,1) var level`:
+
+| Nível | Cena | Círculos pulados (fórmula `level + ROCKET_BASE_JUMPS`) |
+|-------|------|----------------------------------------------------------|
+| 1 | `RocketItem.tscn` | 3 |
+| 2 | `RocketItemLvl2.tscn` (instância de `RocketItem.tscn`, `level = 2`) | 4 |
+| 3 | `RocketItemLvl3.tscn` (instância de `RocketItem.tscn`, `level = 3`) | 5 |
+
+Qualquer um dos 3 pode ser instanciado/spawnado da mesma forma — só muda `level`. Hoje só o **nível 1** está de fato posicionado numa run (spawn de teste, ver abaixo); os níveis 2 e 3 estão prontos para uso mas não estão colocados em nenhum nível ainda.
+
+**Regra do "+1 círculo vazio":** se um dos pousos automáticos cair num checkpoint (`bg_number > 0`, sem perigo — ver `CircleCheckpoint.tscn`), a sequência ganha **+1 pulo extra** (uma única vez por ativação) para compensar, já que aquele pouso não "conta" como um obstáculo de verdade superado. Ex.: nível 1 normalmente pula 3 círculos, mas pula 4 se um deles for um checkpoint vazio.
+
+**Visual:** ícone laranja (`Color(1.0, 0.4, 0.08)`) de foguete apontando para cima, chama pulsante apontando para baixo, desenhado via `_draw()`. Escala e número de auréolas/pips acima do foguete crescem com `level` (1 pip = nível 1, 3 pips = nível 3). Mesmo bob suave dos outros itens.
+
+**Posicionamento (teste):** `Game._spawn_rocket_item()` procura em runtime o círculo de checkpoint com `bg_number == 2` — o "início do segundo nível", qualquer que seja o `LevelChunk` sorteado ali (funciona igual nos modos sequencial e embaralhado) — e posiciona um `RocketItem.tscn` (nível 1) no gap logo depois dele.
+
+**Fluxo:**
+1. Player coleta o ícone durante o voo → `Game._on_rocket_collected(level)`: `player.set_rocket_active(true)` (invencibilidade total), `_rocket_jumps_left = level + ROCKET_BASE_JUMPS`, câmera treme (`_camera_shake`) e primeiro boom (`_spawn_boom`) no ponto de coleta
+2. O voo em andamento no momento da coleta conta como o **1º pulo** da sequência
+3. A cada pouso, `Game._on_player_landed` chama `_rocket_advance(circle)`: decrementa `_rocket_jumps_left`, aplica a regra do checkpoint vazio (+1 uma vez), dispara boom + tremor de câmera naquele círculo, e — se ainda houver pulos — encadeia `player.move_to(next)` **sem esperar toque**, reaproveitando `_leave_circle_cleanup()` para encerrar os perigos do círculo deixado
+4. Quando os pulos acabam: `player.set_rocket_active(false)`, controle volta ao jogador normalmente no círculo onde parou
+
+**Invencibilidade (`Player.gd`):** mesmo ponto único de interceptação usado pelo escudo —
+- `_die(reason)`: se `rocket_active`, retorna imediatamente sem matar (cobre arco bloqueado, laser, orbiter, chaser, barreira, shrink/drift/grow/poison, relógio — qualquer causa)
+- `_on_arrived()`: a condição de pouso válido passa a aceitar `rocket_active` como alternativa a `is_landing_valid()`, então o pouso automático sempre é aceito (nunca cai no branch de morte)
+- Sprite pisca em laranja (`ROCKET_FLASH_MODULATE`) enquanto `rocket_active`, alternando com o modulate neutro
+
+**Câmera e boom:**
+- `Game._camera_shake(trauma)` soma trauma escalado por `level` (mais forte em níveis mais altos); decai sozinho (ver seção Câmera)
+- `Game._spawn_boom(pos, scale_mult)` instancia `RocketBoom.gd`: onda de choque (anel duplo) + 22×`scale_mult` fagulhas maiores/mais rápidas que o `PixelBurst` normal de pouso — usa `scale_mult = level`, então tiers mais altos explodem visivelmente maior
+
+**RocketItem.gd — API:**
+```gdscript
+@export_range(1, 3, 1) var level: int = 1
+signal collected(level: int)          # conectado a Game._on_rocket_collected(level)
+var _active: bool                     # false após coleta, bloqueia collect() duplo
+func collect() -> void                # desativa, emite sinal, anima saída (scale 1.8× + fade 0.15s)
+```
+
+**Player.gd — API:**
+```gdscript
+var rocket_active: bool = false
+func set_rocket_active(active: bool) -> void   # liga/desliga a invencibilidade e o flash laranja
+```
+
+**Game.gd — vars de estado:**
+```gdscript
+const ROCKET_BASE_JUMPS := 2             # nível + isto = círculos pulados (1→3, 2→4, 3→5)
+var _rocket_active: bool = false
+var _rocket_jumps_left: int = 0
+var _rocket_extended: bool = false       # true depois de aplicar o +1 do checkpoint vazio (só 1x por ativação)
+var _rocket_level: int = 1               # nível do Rocket coletado, usado para escalar shake/boom
+var _cam_trauma: float = 0.0             # tremor de câmera (ver seção Câmera)
+```
+
 ---
 
 ## Configurações técnicas Godot
@@ -1030,3 +1099,4 @@ var _respawn_clock_item: Node2D = null   # referência ao item gerado no respawn
 30. Testar em dispositivo real desde cedo
 31. ✅ Barreiras deslizantes (`Barrier.tscn`) — nível 15 implementado (arco + vão horizontal em ping-pong nos 4 gaps do nível)
 32. ✅ Arquitetura de `LevelChunk` — os 15 níveis viraram cenas relocáveis (`scenes/levels/`) montadas em runtime por `Game._build_run()`; tela inicial deixa escolher run sequencial ou embaralhada (`UIOverlay.show_mode_select()`). Run ainda é finita — geração infinita sob demanda fica para depois
+33. ✅ Powerup Rocket (`RocketItem`) — pulo automático invencível com câmera tremendo + boom; 3 níveis prontos (3/4/5 círculos, `RocketItem.tscn` / `RocketItemLvl2.tscn` / `RocketItemLvl3.tscn`); spawn de teste no início do 2º nível (nível 1 apenas — 2 e 3 prontos mas ainda não posicionados em nenhuma run)

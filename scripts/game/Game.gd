@@ -79,6 +79,10 @@ const CAM_SHAKE_MAX_OFFSET  := 18.0
 var _rocket_active: bool      = false
 var _rocket_jumps_left: int   = 0
 var _rocket_extended: bool    = false
+var _rocket_level: int        = 1
+## Círculos pulados automaticamente = level + ROCKET_BASE_JUMPS (nível 1 → 3,
+## nível 2 → 4, nível 3 → 5), estendido em +1 se cair num checkpoint vazio.
+const ROCKET_BASE_JUMPS := 2
 
 
 func _ready() -> void:
@@ -191,11 +195,11 @@ func _camera_shake(trauma: float) -> void:
 	_cam_trauma = clampf(_cam_trauma + trauma, 0.0, 1.0)
 
 
-func _spawn_boom(pos: Vector2) -> void:
+func _spawn_boom(pos: Vector2, scale_mult: float = 1.0) -> void:
 	var boom := preload("res://scripts/fx/RocketBoom.gd").new()
 	add_child(boom)
 	boom.global_position = pos
-	boom.fire()
+	boom.fire(scale_mult)
 
 
 func _next_circle() -> Node2D:
@@ -448,13 +452,16 @@ func _on_shield_broken() -> void:
 
 ## Ao coletar, o player fica invencível e o Game passa a pilotar os pulos
 ## automaticamente (ver _rocket_advance, chamado a cada pouso via landed_on).
-func _on_rocket_collected() -> void:
+## `level` (1-3) vem do RocketItem coletado e define quantos círculos são
+## pulados: nível 1 → 3, nível 2 → 4, nível 3 → 5 (fórmula level + ROCKET_BASE_JUMPS).
+func _on_rocket_collected(level: int) -> void:
 	_rocket_active       = true
-	_rocket_jumps_left   = 2
+	_rocket_level        = level
+	_rocket_jumps_left   = level + ROCKET_BASE_JUMPS
 	_rocket_extended     = false
 	player.set_rocket_active(true)
-	_camera_shake(0.6)
-	_spawn_boom(player.global_position)
+	_camera_shake(0.5 + level * 0.15)
+	_spawn_boom(player.global_position, level)
 
 
 ## Chamado a cada pouso enquanto o Rocket está ativo. Conta o pouso, estende a
@@ -466,8 +473,8 @@ func _rocket_advance(landed_circle: Circle) -> void:
 		_rocket_extended = true
 		_rocket_jumps_left += 1
 
-	_camera_shake(0.5)
-	_spawn_boom(landed_circle.global_position)
+	_camera_shake(0.4 + _rocket_level * 0.12)
+	_spawn_boom(landed_circle.global_position, _rocket_level)
 
 	if _rocket_jumps_left <= 0 or circles.size() < 2:
 		_rocket_active = false

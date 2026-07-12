@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://fenestra_rocket_item_lvl2"]
+
+[ext_resource type="PackedScene" path="res://scenes/entities/RocketItem.tscn" id="1_base"]
+
+; Rocket nível 2 — pula 4 círculos automaticamente (ou 5 se um deles for
+; um checkpoint "vazio"). Ver RocketItem.gd e Game.gd::_on_rocket_collected.
+
+[node name="RocketItemLvl2" instance=ExtResource("1_base")]
+level = 2
