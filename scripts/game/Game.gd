@@ -151,7 +151,6 @@ func _finish_setup() -> void:
 	_camera.zoom = Vector2(_cam_zoom, _cam_zoom)
 
 	_spawn_items()
-	_build_path_haze()
 	_run_ready = true
 	queue_redraw()
 
@@ -490,61 +489,45 @@ func _rocket_advance(landed_circle: Circle) -> void:
 # ─── Desenho ─────────────────────────────────────────────────────────────────
 
 const PATH_HAZE_COLOR := Color(0.72, 0.72, 0.8, 1.0)
-
-## Jitter de névoa por segmento (índice = gap entre circles[i] e circles[i+1]),
-## calculado uma vez em _build_path_haze() para não "piscar" a cada redraw.
-## Cada entrada: Array[Dictionary] com t (posição 0-1 ao longo do segmento),
-## perp (deslocamento perpendicular em px), radius e alpha do puff.
-var _path_haze: Array = []
-
-
-## Pré-calcula o jitter dos "puffs" de névoa de cada gap entre círculos.
-## Chamado uma única vez em _finish_setup(), depois que `circles` está montado.
-func _build_path_haze() -> void:
-	_path_haze.clear()
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 90210
-	for i in range(circles.size() - 1):
-		var dist := circles[i].global_position.distance_to(circles[i + 1].global_position)
-		var puff_count := clampi(int(dist / 70.0), 3, 7)
-		var puffs: Array = []
-		for p in puff_count:
-			puffs.append({
-				"t":      (p + 0.5) / float(puff_count) + rng.randf_range(-0.04, 0.04),
-				"perp":   rng.randf_range(-14.0, 14.0),
-				"radius": rng.randf_range(7.0, 15.0),
-				"alpha":  rng.randf_range(0.05, 0.11),
-			})
-		_path_haze.append(puffs)
+## Comprimento (px) do fade nas pontas de cada segmento — alpha vai a 0 aqui.
+const PATH_FADE_LEN := 80.0
+## Camadas de glow: [largura, alpha no trecho sólido]. Larga/fraca por baixo,
+## fina/mais forte por cima — mesma técnica da eletricidade em ArcVisual.gd.
+const PATH_HAZE_LAYERS := [
+	[11.0, 0.045],
+	[7.5,  0.065],
+	[5.0,  0.095],
+	[2.8,  0.13],
+	[1.2,  0.17],
+]
 
 
 func _draw() -> void:
 	for i in range(circles.size() - 1):
-		var puffs: Array = _path_haze[i] if i < _path_haze.size() else []
-		_draw_hazy_path(circles[i].global_position, circles[i + 1].global_position, puffs)
+		_draw_hazy_path(circles[i].global_position, circles[i + 1].global_position)
 
 
-## Desenha a conexão entre dois círculos como um rastro esfumaçado em vez de uma
-## linha nítida: glow em camadas (largo/fraco → fino/mais forte, mesma técnica da
-## eletricidade em ArcVisual.gd) por baixo de "puffs" de névoa deslocados
-## perpendicularmente ao longo do segmento, com jitter estável (ver _path_haze).
-func _draw_hazy_path(a: Vector2, b: Vector2, puffs: Array) -> void:
-	draw_line(a, b, Color(PATH_HAZE_COLOR, 0.05), 9.0)
-	draw_line(a, b, Color(PATH_HAZE_COLOR, 0.10), 5.0)
-	draw_line(a, b, Color(PATH_HAZE_COLOR, 0.18), 2.0)
-
+## Desenha a conexão entre dois círculos como uma linha esfumaçada: várias
+## camadas de glow sobrepostas, com o alpha suavizado nas pontas (fade in/out
+## via draw_polyline_colors) em vez de uma linha nítida de ponta a ponta.
+func _draw_hazy_path(a: Vector2, b: Vector2) -> void:
 	var dist := a.distance_to(b)
-	if dist < 0.01:
+	if dist < 1.0:
 		return
 	var dir  := (b - a) / dist
-	var perp := Vector2(-dir.y, dir.x)
-	for puff in puffs:
-		var along  := a.lerp(b, clampf(puff["t"], 0.0, 1.0))
-		var center := along + perp * float(puff["perp"])
-		var r: float  = puff["radius"]
-		var al: float = puff["alpha"]
-		draw_circle(center, r,        Color(PATH_HAZE_COLOR, al))
-		draw_circle(center, r * 0.55, Color(PATH_HAZE_COLOR, al * 1.6))
+	var fade := minf(PATH_FADE_LEN, dist * 0.5)
+	var points := PackedVector2Array([a, a + dir * fade, b - dir * fade, b])
+
+	for layer in PATH_HAZE_LAYERS:
+		var width: float       = layer[0]
+		var solid_alpha: float = layer[1]
+		var colors := PackedColorArray([
+			Color(PATH_HAZE_COLOR, 0.0),
+			Color(PATH_HAZE_COLOR, solid_alpha),
+			Color(PATH_HAZE_COLOR, solid_alpha),
+			Color(PATH_HAZE_COLOR, 0.0),
+		])
+		draw_polyline_colors(points, colors, width, true)
 
 
 # ─── Input ───────────────────────────────────────────────────────────────────
