@@ -678,6 +678,7 @@ func _on_player_died(reason: String) -> void:
 	_ui.set_lives(lives)
 	await get_tree().create_timer(RESPAWN_DELAY).timeout
 	if lives <= 0:
+		_camera_shake(0.8)
 		_ui.show_game_over()
 		return
 	current_index = last_checkpoint_index

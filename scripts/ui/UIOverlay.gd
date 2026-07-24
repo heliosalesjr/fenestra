@@ -39,6 +39,9 @@ const MODE_SHUF_COLOR := Color(0.82, 0.28, 0.95)
 const MAX_LIVES    := 3
 var lives: int     = MAX_LIVES
 var _game_over: bool = false
+## Progresso (0-1) da entrada dramática da tela de Game Over — usado pelo fade/
+## slide-in do título e pelo fade + pisca do "tap to restart" em _draw_game_over().
+var _game_over_anim: float = 0.0
 
 var _clock_active:   bool  = false
 var _clock_progress: float = 1.0
@@ -49,6 +52,13 @@ var _mode_select_active: bool = false
 
 func _ready() -> void:
 	$PauseBtn.pressed.connect(_on_pause_btn_pressed)
+
+
+func _process(_delta: float) -> void:
+	# Mantém o "tap to restart" piscando depois que a entrada dramática termina
+	# (o tween da entrada já chama queue_redraw() sozinho via _set_game_over_anim).
+	if _game_over:
+		queue_redraw()
 
 
 func _mode_seq_rect() -> Rect2:
@@ -92,10 +102,21 @@ func set_score(n: int) -> void:
 	queue_redraw()
 
 
+## Entra na tela de Game Over com uma transição dramática (fade + slide-in do
+## título com leve overshoot) — sem isso, o jogo só "parava de responder" aos
+## toques sem deixar claro que a run tinha acabado.
 func show_game_over() -> void:
 	_game_over = true
 	mouse_filter = MOUSE_FILTER_STOP
 	$PauseBtn.visible = false
+	_game_over_anim = 0.0
+	var tween := create_tween()
+	tween.tween_method(_set_game_over_anim, 0.0, 1.0, 0.5) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _set_game_over_anim(v: float) -> void:
+	_game_over_anim = v
 	queue_redraw()
 
 
@@ -201,20 +222,35 @@ func _draw_pause() -> void:
 
 
 func _draw_game_over() -> void:
-	draw_rect(Rect2(0, 0, VIEWPORT_W, VIEWPORT_H), Color(0.0, 0.0, 0.05, 0.85))
+	# TRANS_BACK com EASE_OUT ultrapassa 1.0 brevemente (overshoot) — dá o "pop"
+	# no título; o resto do desenho usa a versão grampeada em [0,1].
+	var raw := _game_over_anim
+	var t    := clampf(raw, 0.0, 1.0)
+
+	draw_rect(Rect2(0, 0, VIEWPORT_W, VIEWPORT_H), Color(0.0, 0.0, 0.05, 0.85 * t))
 	var font: Font = ThemeDB.fallback_font
 
 	var title      := "GAME OVER"
-	var title_size := 52
-	var tw         := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
-	draw_string(font, Vector2((VIEWPORT_W - tw) * 0.5, VIEWPORT_H * 0.42),
-		title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size, Color(1.0, 0.85, 0.2, 1.0))
+	var title_size := int(52 * clampf(raw, 0.0, 1.15))
+	if title_size <= 0:
+		return
+	var tw   := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
+	var drop := (1.0 - t) * 60.0   # desliza de cima pra baixo enquanto entra
+	draw_string(font, Vector2((VIEWPORT_W - tw) * 0.5, VIEWPORT_H * 0.42 - drop),
+		title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size, Color(1.0, 0.85, 0.2, t))
 
 	var sub      := "tap to restart"
 	var sub_size := 22
 	var sw       := font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_size).x
+	var sub_alpha: float
+	if t < 1.0:
+		# aparece só depois que o título já entrou, sem pisca-pisca ainda
+		sub_alpha = clampf((t - 0.5) / 0.5, 0.0, 1.0) * 0.55
+	else:
+		# entrada concluída: pisca suavemente pra puxar o olho pro toque
+		sub_alpha = 0.35 + 0.25 * sin(Time.get_ticks_msec() * 0.0045)
 	draw_string(font, Vector2((VIEWPORT_W - sw) * 0.5, VIEWPORT_H * 0.54),
-		sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_size, Color(1.0, 1.0, 1.0, 0.5))
+		sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_size, Color(1.0, 1.0, 1.0, sub_alpha))
 
 
 func _draw_mode_select() -> void:
