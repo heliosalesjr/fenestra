@@ -577,8 +577,19 @@ Ao morrer, após 0.35s de delay:
 3. `attach_to_circle()` é chamado ao chegar — modulate volta ao normal
 
 ### Linhas de conexão
-Linhas cinzas semi-transparentes conectam os círculos na ordem da sequência.
-Desenhadas via `_draw()` no nó raiz do Game.
+
+Cada gap entre círculos consecutivos é desenhado como um rastro **esfumaçado/blurred**
+em vez de uma linha nítida — `Game._draw()` chama `_draw_hazy_path(a, b)` para cada par.
+
+- **Glow em camadas** (`PATH_HAZE_LAYERS`): 5 camadas sobrepostas, larga/fraca por baixo
+  até fina/mais forte por cima (1.2–11px de largura, α 0.045–0.17) — mesma técnica da
+  eletricidade em `ArcVisual.gd`
+- **Fade nas pontas**: cada segmento vira uma polyline de 4 pontos (`a`, `a+fade`, `b-fade`, `b`)
+  desenhada com `draw_polyline_colors()` — alpha 0 nas pontas, alpha cheio no miolo.
+  `PATH_FADE_LEN = 80px` (limitado a metade da distância em gaps curtos)
+- Cor `PATH_HAZE_COLOR = Color(0.72, 0.72, 0.8)` — cinza-azulado claro e translúcido
+- Sem partículas/puffs — só a linha em si (removidos numa iteração anterior por ficarem
+  visualmente ruins)
 
 ### Câmera
 
