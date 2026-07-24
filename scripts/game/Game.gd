@@ -196,10 +196,10 @@ func _camera_shake(trauma: float) -> void:
 
 
 func _spawn_boom(pos: Vector2, scale_mult: float = 1.0) -> void:
-	var boom := preload("res://scripts/fx/RocketBoom.gd").new()
+	var boom := preload("res://scripts/fx/PixelBurst.gd").new()
 	add_child(boom)
 	boom.global_position = pos
-	boom.fire(scale_mult)
+	boom.fire_boom(scale_mult)
 
 
 func _next_circle() -> Node2D:

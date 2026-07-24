@@ -168,7 +168,7 @@ func _spawn_burst(contact: Vector2, outward_dir: Vector2, color: Color = Color(0
 	var burst := preload("res://scripts/fx/PixelBurst.gd").new()
 	get_parent().add_child(burst)
 	burst.global_position = contact
-	burst.fire(outward_dir, color)
+	burst.fire_burst(outward_dir, color)
 
 
 # Verifica se a direção `world_dir` (vetor do centro do círculo → ponto na borda)

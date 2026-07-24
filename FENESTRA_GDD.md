@@ -346,9 +346,8 @@ fenestra/
 │   │   ├── Barrier.gd                 # vão deslizante ping-pong; is_open_at(world_x)
 │   │   └── ShieldBubble.gd            # círculo translúcido desenhado por cima da sprite com escudo ativo
 │   ├── fx/
-│   │   ├── PixelBurst.gd              # partículas quadradas no ponto de contato ao pousar
-│   │   └── RocketBoom.gd              # onda de choque + fagulhas do powerup Rocket (maior/mais dramático)
-│   ├── ui/
+│   │   └── PixelBurst.gd              # partículas quadradas genéricas: fire_burst() (pouso) e fire_boom() (Rocket, com anel)
+│   │   │   ├── ui/
 │   │   └── UIOverlay.gd               # desenho do HUD, tela de escolha de modo, game over, pause
 │   └── PhaseConfig.gd                 # configuração de fase como Resource — pendente
 ├── assets/
@@ -552,12 +551,22 @@ Nos círculos mirror, a eletricidade cobre as zonas perigosas (complemento dos `
 
 ### Efeito PixelBurst no pouso
 
-Ao pousar com sucesso num círculo, `Player._on_arrived()` instancia um `PixelBurst` no ponto exato de contato (borda do círculo, na direção de chegada). O nó se auto-destrói após a animação.
+`PixelBurst.gd` é um efeito de partículas genérico (quadradinhos com fricção + fade
+quadrático, anel de onda de choque opcional) com duas variantes prontas que
+reaproveitam a mesma física — só a config (contagem/tamanho/cores/anel) muda:
 
-- 12 partículas quadradas (4px), direções aleatórias (360°)
-- Cores: variações claro/escuro da `free_color` do círculo tocado
-- Velocidade: 120–300px/s com fricção (×0.88/frame)
-- Duração: 0.4s, fade quadrático
+- **`fire_burst()`** — burst simples de pouso. Ao pousar com sucesso num círculo,
+  `Player._on_arrived()` instancia o nó no ponto exato de contato (borda do círculo,
+  na direção de chegada) e chama isto. 12 partículas quadradas (4px), direções
+  aleatórias (360°), cores = variações claro/escuro da `free_color` do círculo tocado,
+  velocidade 120–300px/s com fricção ×0.88/frame, duração 0.4s
+- **`fire_boom(scale_mult)`** — "boom" do powerup Rocket (ver "Modificadores de nível").
+  22×`scale_mult` partículas maiores/mais rápidas (5px, 160–420px/s, fricção ×0.90,
+  duração 0.5s, paleta fixa laranja/amarelo) **+** anel de onda de choque (raio até
+  95×`scale_mult`px, 0.32s)
+
+O nó se auto-destrói (`queue_free()`) quando não sobra nenhuma partícula viva (nem anel,
+se houver).
 
 ### Player — sprite e animação
 
@@ -985,7 +994,7 @@ Qualquer um dos 3 pode ser instanciado/spawnado da mesma forma — só muda `lev
 
 **Câmera e boom:**
 - `Game._camera_shake(trauma)` soma trauma escalado por `level` (mais forte em níveis mais altos); decai sozinho (ver seção Câmera)
-- `Game._spawn_boom(pos, scale_mult)` instancia `RocketBoom.gd`: onda de choque (anel duplo) + 22×`scale_mult` fagulhas maiores/mais rápidas que o `PixelBurst` normal de pouso — usa `scale_mult = level`, então tiers mais altos explodem visivelmente maior
+- `Game._spawn_boom(pos, scale_mult)` instancia `PixelBurst.gd` e chama `fire_boom(scale_mult)` (ver "Efeito PixelBurst no pouso") — usa `scale_mult = level`, então tiers mais altos explodem visivelmente maior
 
 **RocketItem.gd — API:**
 ```gdscript
