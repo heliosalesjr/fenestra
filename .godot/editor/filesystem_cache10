@@ -3,13 +3,51 @@
 FENESTRA_GDD.md::TextFile::-1::1784896069::0::1::::<><><>0<>0<><>::
 ::res://assets/::1773348510
 ::res://assets/audio/::1773348510
-::res://assets/sprites/::1778454049
+::res://assets/sprites/::1787664556
 ::res://assets/sprites/bat/::1778454056
 BatAttack.png::CompressedTexture2D::4957635898699987887::1778454056::1778454056::1::::<><><>0<>0<>a69c106cd4763dc1f5de45b24f4fef30<>res://.godot/imported/BatAttack.png-08a8e46dbcf259222228461c5828c92c.ctex::
 BatDamaged.png::CompressedTexture2D::5873219338750032226::1778454056::1778454056::1::::<><><>0<>0<>322b83a1935bcf56bda278f3f406a373<>res://.godot/imported/BatDamaged.png-93582a9892f49fd08f9c8372ce19d912.ctex::
 BatDamagedColor.png::CompressedTexture2D::3828751058496197065::1778454056::1778454056::1::::<><><>0<>0<>6ab755f75a79061894527d52a890e1ac<>res://.godot/imported/BatDamagedColor.png-b8bb9305585aae3d79f1382a07018914.ctex::
 BatDeath.png::CompressedTexture2D::6891094810717498186::1778454056::1778454056::1::::<><><>0<>0<>19e3c254a95dd892f54dab951cd03baf<>res://.godot/imported/BatDeath.png-322559612a769602926cfae9f1be1738.ctex::
 BatMovement.png::CompressedTexture2D::4188149340394597627::1778454056::1778454056::1::::<><><>0<>0<>43200e72a40207f320ad49e4824b2015<>res://.godot/imported/BatMovement.png-84114cf92d754101a2c3c65ea9f788ab.ctex::
+::res://assets/sprites/round ghost/::1787664556
+license.txt::TextFile::-1::1787664556::0::1::::<><><>0<>0<><>::
+::res://assets/sprites/round ghost/round ghost attack/::1787664556
+sprite_0.png::CompressedTexture2D::8878322215077792151::1787664556::1787664556::1::::<><><>0<>0<>e717a68c2384b6327d84428a7f9c322c<>res://.godot/imported/sprite_0.png-b2158b72ca20f7ed5084fc2231894472.ctex::
+sprite_1.png::CompressedTexture2D::1911124721645829056::1787664556::1787664556::1::::<><><>0<>0<>f75724d6b623a76ac313dfa95cc86c0e<>res://.godot/imported/sprite_1.png-26e5f6999b1f50f491dc72cf98c4e934.ctex::
+sprite_2.png::CompressedTexture2D::3158941686466294681::1787664556::1787664556::1::::<><><>0<>0<>37b67a5a8ab30e8e38eac142bef78da5<>res://.godot/imported/sprite_2.png-f43e333036dcdc9dd318f64d0b1940da.ctex::
+sprite_3.png::CompressedTexture2D::8759395001412902669::1787664556::1787664556::1::::<><><>0<>0<>673ebbbcfec1ecf043a8fc6fc4ad1743<>res://.godot/imported/sprite_3.png-a87f19dde024b741e4453f9113a3fc4e.ctex::
+sprite_4.png::CompressedTexture2D::8757574823356221966::1787664556::1787664556::1::::<><><>0<>0<>e74db1baf2466da24937a1ad181cdc4a<>res://.godot/imported/sprite_4.png-f190503b70f448fe1f1e02acd20fcd86.ctex::
+sprite_5.png::CompressedTexture2D::4920739724614418950::1787664556::1787664556::1::::<><><>0<>0<>2cd58f4454031f4c3e1d8fbde795f17d<>res://.godot/imported/sprite_5.png-1eca3236bdf8eba001a3d12d50a6c75a.ctex::
+sprite_6.png::CompressedTexture2D::3318543039338727483::1787664556::1787664556::1::::<><><>0<>0<>9d3f598ce8564e77eb6c10befb094c3f<>res://.godot/imported/sprite_6.png-cbba2b5fea09930f00ec258dbcea8953.ctex::
+::res://assets/sprites/round ghost/round ghost dead/::1787664556
+sprite_0.png::CompressedTexture2D::107570304306410513::1787664556::1787664556::1::::<><><>0<>0<>cb89cfff4553031c64726fb804bd6567<>res://.godot/imported/sprite_0.png-3e4fadacfb6222276e511de72b99aa62.ctex::
+sprite_1.png::CompressedTexture2D::611187834253371124::1787664556::1787664556::1::::<><><>0<>0<>a7af395a5dc9f11f2e88f59b6d49a526<>res://.godot/imported/sprite_1.png-95603009db5dcbf2cf8b9934bc3c858e.ctex::
+sprite_2.png::CompressedTexture2D::6356092940674543122::1787664556::1787664556::1::::<><><>0<>0<>ffb0665247b75bd0d4b1543a27fb9def<>res://.godot/imported/sprite_2.png-bc644106b4d02f6029291ec04fb16b73.ctex::
+sprite_3.png::CompressedTexture2D::7312024558420884162::1787664556::1787664556::1::::<><><>0<>0<>2a8b5e132a485b63f463f7e3f89fabc4<>res://.godot/imported/sprite_3.png-77f5e9d51b9c94fbd5f9a6a64a54b669.ctex::
+sprite_4.png::CompressedTexture2D::1156907566045633659::1787664556::1787664556::1::::<><><>0<>0<>2772cd47100cfee626f91ba8e57bd00c<>res://.godot/imported/sprite_4.png-298e1f08e8208330afb945504d33f4c7.ctex::
+::res://assets/sprites/round ghost/round ghost idle/::1787664556
+sprite_0.png::CompressedTexture2D::2723627650455373196::1787664556::1787664556::1::::<><><>0<>0<>aab210eab073b61c7af3e5a3e648965a<>res://.godot/imported/sprite_0.png-b3b42097ae7386bc0eb18e25f35c4b8f.ctex::
+sprite_1.png::CompressedTexture2D::1341065991355826997::1787664556::1787664556::1::::<><><>0<>0<>bbee98c1d89d6b5dcbc1da6dc5e48d8d<>res://.godot/imported/sprite_1.png-6af376f548630300878de25cc62ffd1f.ctex::
+sprite_2.png::CompressedTexture2D::8817728359781454933::1787664556::1787664556::1::::<><><>0<>0<>f30859eb6efe51a2a6be63b16ee07b2d<>res://.godot/imported/sprite_2.png-92ec4d631ef0da507c1f198d8557fc8c.ctex::
+sprite_3.png::CompressedTexture2D::2631162919357822416::1787664556::1787664556::1::::<><><>0<>0<>582f58b6bef603008bc5162a23a6a7fc<>res://.godot/imported/sprite_3.png-6b2476fcb0e99b0fa3e8b21ae4747956.ctex::
+sprite_4.png::CompressedTexture2D::3703666915569339091::1787664556::1787664556::1::::<><><>0<>0<>24a7a874f9d7d9f195c5c56360f4f89b<>res://.godot/imported/sprite_4.png-652a602ccb60f6b912b1b034fe616232.ctex::
+sprite_5.png::CompressedTexture2D::3801113411470485054::1787664556::1787664556::1::::<><><>0<>0<>21794ba08b81ddba82bac31bd6e5c8f9<>res://.godot/imported/sprite_5.png-5cf548652b0a1af0902ce0ae97627c3a.ctex::
+sprite_6.png::CompressedTexture2D::5678860183841228224::1787664556::1787664556::1::::<><><>0<>0<>310c3c92fa3694b564ccba46853b0315<>res://.godot/imported/sprite_6.png-73cd89b9c4c2d0226de7b1c0ca45ecfb.ctex::
+sprite_7.png::CompressedTexture2D::3536836141522860180::1787664556::1787664556::1::::<><><>0<>0<>bec19f3ad496101cbd1be9f150fcbf35<>res://.godot/imported/sprite_7.png-432db7440251a67bf65feebd81d5aae5.ctex::
+sprite_8.png::CompressedTexture2D::1038322629039936526::1787664556::1787664556::1::::<><><>0<>0<>2fcc0cf2139a5b3643856876d3293708<>res://.godot/imported/sprite_8.png-d6580a90c0447653a8ef9dcb41da193d.ctex::
+::res://assets/sprites/round ghost/round ghost taking damage/::1787664556
+sprite_0.png::CompressedTexture2D::4226716349159490437::1787664556::1787664556::1::::<><><>0<>0<>a1c2df1438d04b3a85599cd6b7bb7b50<>res://.godot/imported/sprite_0.png-2e8accc471b92eea1a5a5bff76de3c5b.ctex::
+sprite_1.png::CompressedTexture2D::2812014158240836987::1787664556::1787664556::1::::<><><>0<>0<>b1d8c8a331e88fcad223d6b6e92ace39<>res://.godot/imported/sprite_1.png-22e05141df00c13b21922dbc2575fe18.ctex::
+sprite_2.png::CompressedTexture2D::959806934017329753::1787664556::1787664556::1::::<><><>0<>0<>3d763da7d234780c0e1a77bb918a8aa4<>res://.godot/imported/sprite_2.png-a16cc7d6b935ed19dfbb693d912b4a30.ctex::
+sprite_3.png::CompressedTexture2D::5981818757514047930::1787664556::1787664556::1::::<><><>0<>0<>fe3f6f7eec1b1ddb42f38367f078a345<>res://.godot/imported/sprite_3.png-65afe4ad7e6a931981f8ede7e2506382.ctex::
+::res://assets/sprites/round ghost/round ghost walk/::1787664556
+sprite_0.png::CompressedTexture2D::7750852475593103181::1787664556::1787664556::1::::<><><>0<>0<>914520ac3dc1cabb3d91ff3187ab90a7<>res://.godot/imported/sprite_0.png-ee773f0d840923d3044c2e86179ec2fc.ctex::
+sprite_1.png::CompressedTexture2D::2242577320601287085::1787664556::1787664556::1::::<><><>0<>0<>137dfebb8d37aba1d4970c8aaaa128b5<>res://.godot/imported/sprite_1.png-7991af81e4dd7136bbdf2ddef07555bb.ctex::
+sprite_2.png::CompressedTexture2D::5922688202488097787::1787664556::1787664556::1::::<><><>0<>0<>01f77838879ceecfe8d290d8d9222f71<>res://.godot/imported/sprite_2.png-b38e1bc721afb1c214afa13a5f5c9089.ctex::
+sprite_3.png::CompressedTexture2D::8682503598906680353::1787664556::1787664556::1::::<><><>0<>0<>f06dccbc8b5e5d557a9334971b862d2f<>res://.godot/imported/sprite_3.png-2039d1d47af4c1849e1d9b1844aeaa41.ctex::
+sprite_4.png::CompressedTexture2D::8326960080005412494::1787664556::1787664556::1::::<><><>0<>0<>822384493b1c26862e7ea4f72fe1c7e6<>res://.godot/imported/sprite_4.png-e5f7d524359de6eaa49324e8ee6ecc69.ctex::
+sprite_5.png::CompressedTexture2D::7151839537923317683::1787664556::1787664556::1::::<><><>0<>0<>9bac04a53827312f185e4fef71480289<>res://.godot/imported/sprite_5.png-4dafba168014a7ab2d3e754deb05bc3f.ctex::
 ::res://scenes/::1783468398
 Circle.tscn::PackedScene::345035627668240761::1773516684::0::1::::<><><>0<>0<><>::res://scripts/Circle.gd<>res://scripts/ArcVisual.gd
 ::res://scenes/circles/::1779053509
