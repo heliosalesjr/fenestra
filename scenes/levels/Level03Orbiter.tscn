@@ -13,21 +13,21 @@ checkpoint_path = NodePath("Checkpoint")
 position = Vector2(88, -450)
 rotation_speed = 65.0
 circle_radius = 62.0
-orbiter_count = 9
+orbiter_count = 3
 orbiter_base_radius_mult = 1.55
 
 [node name="OrbB" parent="." instance=ExtResource("2_orbiter")]
 position = Vector2(300, -900)
 rotation_speed = -52.0
 circle_radius = 74.0
-orbiter_count = 18
+orbiter_count = 4
 orbiter_base_radius_mult = 1.85
 
 [node name="OrbC" parent="." instance=ExtResource("2_orbiter")]
 position = Vector2(108, -1350)
 rotation_speed = 90.0
 circle_radius = 54.0
-orbiter_count = 28
+orbiter_count = 6
 orbiter_base_radius_mult = 2.1
 
 [node name="Checkpoint" parent="." instance=ExtResource("3_checkpoint")]

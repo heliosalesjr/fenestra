@@ -2,25 +2,35 @@ extends Node2D
 
 @export var orbit_radius: float = 90.0
 @export var orbit_speed: float  = 80.0    # graus/s  (positivo = horário)
-@export var sphere_radius: float = 7.0
-@export var sphere_color: Color  = Color(0.95, 0.35, 0.35)
+@export var sphere_radius: float = 12.0:
+	set(value):
+		sphere_radius = value
+		_sync_collision_radius()
 @export var start_angle: float   = 0.0    # graus
 
 enum Mode { ORBITING, CHASING, FLEEING }
 
 const CHASE_SPEED := 70.0    # px/s em direção ao player
 const FLEE_SPEED  := 240.0   # px/s ao fugir após o player sair
+const CHASE_MODULATE := Color(1.6, 0.4, 0.4, 1.0)
 
 var _angle_deg: float = 0.0
 var _mode: Mode = Mode.ORBITING
 var _chase_target: Node2D = null
 var _flee_dir: Vector2 = Vector2.ZERO
-var _draw_color: Color
+
+@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _collision: CollisionShape2D = $Area2D/CollisionShape2D
 
 
 func _ready() -> void:
 	_angle_deg = start_angle
-	_draw_color = sphere_color
+	_sync_collision_radius()
+	# Frame inicial aleatório pra não sincronizar todos os fantasmas do mesmo círculo.
+	if _sprite.sprite_frames:
+		var count := _sprite.sprite_frames.get_frame_count(&"idle")
+		if count > 0:
+			_sprite.frame = randi() % count
 
 
 func _process(delta: float) -> void:
@@ -36,18 +46,13 @@ func _process(delta: float) -> void:
 			global_position += _flee_dir * FLEE_SPEED * delta
 
 
-func _draw() -> void:
-	draw_circle(Vector2.ZERO, sphere_radius, _draw_color)
-
-
 # ─── API de perseguição ──────────────────────────────────────────────────────
 
 ## Ativa o modo perseguidor: fica vermelho e começa a se mover em direção a target.
 func start_chasing(target: Node2D) -> void:
 	_mode = Mode.CHASING
 	_chase_target = target
-	_draw_color = Color(0.95, 0.15, 0.15)
-	queue_redraw()
+	_sprite.modulate = CHASE_MODULATE
 
 
 ## Para a perseguição: voa para longe do centro do círculo e faz fade out.
@@ -74,3 +79,10 @@ func fade_and_free() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.35).set_ease(Tween.EASE_IN)
 	tween.tween_callback(queue_free)
+
+
+func _sync_collision_radius() -> void:
+	if not is_node_ready():
+		return
+	if _collision and _collision.shape is CircleShape2D:
+		_collision.shape.radius = sphere_radius

@@ -328,12 +328,6 @@ func _spawn_orbiters() -> void:
 		orb.orbit_radius  = circle_radius * orbiter_base_radius_mult * randf_range(0.9, 1.7)
 		orb.orbit_speed   = randf_range(45.0, 140.0) * (1.0 if randf() > 0.5 else -1.0)
 		orb.start_angle   = randf() * 360.0
-		orb.sphere_radius = randf_range(3.5, 11.0)
-		orb.sphere_color  = Color(
-			randf_range(0.75, 1.0),
-			randf_range(0.1,  0.5),
-			randf_range(0.1,  0.35)
-		)
 
 
 ## Faz todos os orbiters filhos sumirem (chamado pelo Game ao pousar neste círculo).
