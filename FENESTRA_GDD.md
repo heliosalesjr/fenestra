@@ -35,11 +35,12 @@ Cada círculo alterna entre estado **ativo** e **inativo** em ciclos.
 - Um indicador de progresso ao redor da borda mostra quanto tempo falta para o próximo estado mudar.
 
 ### 3. Orbiters
-Pequenas esferas que orbitam ao redor de certos círculos em padrões variados.
+Pequenos fantasmas animados que orbitam ao redor de certos círculos em padrões variados.
+- Sprite `AnimatedSprite2D` com 9 frames de `assets/sprites/round ghost/round ghost idle/` a 8fps, loop. Cada instância começa num frame aleatório para não sincronizar visualmente.
+- `Area2D` com `CircleShape2D` filho (raio sincronizado com `sphere_radius`) descreve a hitbox — hoje a colisão real é feita por distância em `_check_orbiter_collision()`, mas a shape existe para uso futuro/inspeção no editor.
 - Se o jogador chegar a um círculo que possui orbiters, eles fazem **fade out** e somem.
 - **Contato com orbiter durante o movimento = morte** (verificado frame a frame em `_check_orbiter_collision()`).
-- Tamanhos, velocidades e ângulos de início variáveis por orbiter.
-- Podem orbitar em sentidos e raios diferentes no mesmo círculo.
+- Tamanho uniforme por círculo (sem randomização de raio/cor). Velocidades, sentidos e ângulos de início são sorteados por orbiter.
 - Gerados proceduralmente em `_ready()` com `orbiter_count` e `orbiter_base_radius_mult`.
 
 ### 5. Círculo espelho
@@ -456,21 +457,22 @@ Ao adicionar um novo círculo a um nível, escolha a cena pelo tipo de perigo e 
 
 ### Orbiter.gd — responsabilidades
 - Orbita ao redor do centro do nó pai em modo `ORBITING` (padrão)
-- Em modo `CHASING`: move-se em direção ao player a 70px/s, cor vira vermelho
+- Em modo `CHASING`: move-se em direção ao player a 70px/s, aplica modulate vermelho HDR (`Color(1.6, 0.4, 0.4)`) no `AnimatedSprite2D`
 - Em modo `FLEEING`: voa para longe do centro do círculo a 240px/s com fade out
 - `fade_and_free()`: se CHASING, chama `stop_chasing()`; caso contrário fade padrão de 0.35s
+- Cena `Orbiter.tscn` contém `AnimatedSprite2D` (autoplay `idle`, scale 0.5) + `Area2D/CollisionShape2D` (CircleShape2D)
+- `sphere_radius` tem setter que sincroniza o raio do `CircleShape2D` — mantém sprite/hitbox coerentes
 
 **Orbiter.gd — exports:**
 ```gdscript
 @export var orbit_radius: float
 @export var orbit_speed: float   # graus/s, positivo = horário
-@export var sphere_radius: float
-@export var sphere_color: Color
+@export var sphere_radius: float # também define o raio do CircleShape2D
 @export var start_angle: float   # graus
 ```
 
 **Orbiter.gd — API pública:**
-- `start_chasing(target: Node2D)` — ativa modo CHASING, cor vira vermelho
+- `start_chasing(target: Node2D)` — ativa modo CHASING, aplica modulate vermelho no sprite
 - `stop_chasing()` — calcula direção de fuga, ativa modo FLEEING com fade out
 - `fade_and_free()` — remoção suave (delega para stop_chasing se estiver perseguindo)
 
@@ -585,6 +587,10 @@ Ao morrer, após 0.35s de delay:
 2. Player cai até o checkpoint (ease in, 0.48s)
 3. `attach_to_circle()` é chamado ao chegar — modulate volta ao normal
 
+**Grace period.** `_respawn_invuln_timer` (default 1.2s) cobre a animação de respawn E deixa ~0.5s de folga depois de aterrissar no checkpoint. Enquanto `> 0`:
+- `_die()` retorna sem matar (protege contra barreiras/orbiters do caminho de volta)
+- `_on_arrived()` aceita o pouso mesmo se o arco/laser/veneno estiver bloqueado — mesma cortesia do escudo, evita ficar preso em `state=MOVING` sem morrer nem pousar (bug de trava histórico)
+
 ### Linhas de conexão
 
 Cada gap entre círculos consecutivos é desenhado como um rastro **esfumaçado/blurred**
@@ -697,12 +703,12 @@ Espaçamento vertical uniforme de **450px** entre todos os círculos. Com zoom �
 
 | Círculo | Posição | Raio | Vel. (°/s) | Orbiters |
 |---------|---------|------|------------|----------|
-| OrbA | (88, −3150) | 62 | +65 | 9, raio mult=1.55 |
-| OrbB | (300, −3600) | 74 | −52 | 18, raio mult=1.85 |
-| OrbC | (108, −4050) | 54 | +90 | 28, raio mult=2.1 |
+| OrbA | (88, −3150) | 62 | +65 | 3, raio mult=1.55 |
+| OrbB | (300, −3600) | 74 | −52 | 4, raio mult=1.85 |
+| OrbC | (108, −4050) | 54 | +90 | 6, raio mult=2.1 |
 | CircleEnd | (195, −4500) | 78 | 0 | Checkpoint (bg_number=4) |
 
-> Sem arcos bloqueados, sem pulso — o desafio é puramente visual: desviar dos orbiters durante o voo. OrbA tem 9 orbiters com raio moderado, fácil de ler. OrbB dobra a quantidade (18) e aumenta o raio de órbita, tornando o campo mais denso. OrbC chega a 28 orbiters com raio mult 2.1 — o espaço entre eles se torna estreito e a leitura de janela se faz no caos. Ao pousar, todos somem.
+> Sem arcos bloqueados, sem pulso — o desafio é puramente visual: desviar dos fantasmas durante o voo. Poucas unidades por círculo, com raios de órbita bem espaçados: OrbA tem 3 fantasmas fáceis de ler, OrbB sobe pra 4 e amplia o raio, OrbC chega a 6 com raio mult 2.1 — janelas ainda existem mas exigem timing. Ao pousar, todos somem.
 
 ### Nível 4 — Orbiters perseguidores *(randomizado)*
 

@@ -152,7 +152,7 @@ func _on_arrived() -> void:
 		return
 	var from_pos := current_circle.global_position if current_circle else global_position
 	var approach_angle_deg := rad_to_deg((from_pos - circle.global_position).angle())
-	if circle.is_landing_valid(approach_angle_deg) or rocket_active or _try_shield_save():
+	if circle.is_landing_valid(approach_angle_deg) or rocket_active or _respawn_invuln_timer > 0.0 or _try_shield_save():
 		var outward_dir := (from_pos - circle.global_position).normalized()
 		var radius: float = circle.get("circle_radius")
 		var arc_visual := circle.get_node_or_null("RotationRoot/ArcVisual")
